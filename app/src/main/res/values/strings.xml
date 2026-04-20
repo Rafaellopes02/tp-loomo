@@ -1,3 +1,27 @@
 <resources>
-    <string name="app_name">tp-loomo</string>
+    <string name="app_name">Loomo</string>
+
+    <string name="login_title" translatable="false">Login</string>
+    <string name="login_subtitle">Bem-Vindo de Volta!</string>
+    <string name="password_placeholder">Palavra-passe</string>
+    <string name="forgot_password">Esqueceu-se da palavra-passe?</string>
+    <string name="btn_login">Entrar</string>
+    <string name="no_account">Não tem conta?</string>
+    <string name="register_now">Registe-se</string>
+    <string name="create_account_title">Crie a sua conta</string>
+    <string name="full_name">Nome Completo</string>
+    <string name="username">Nome de Utilizador</string>
+    <string name="email" translatable="false">Email</string>
+    <string name="create_account">Criar Conta</string>
+    <string name="have_account">Já tem conta?</string>
+    <string name="onboarding1_title">Gerencie Projetos com Facilidade</string>
+    <string name="onboarding1_subtitle">Organize equipas, acompanhe tarefas e entregue resultados com clareza e eficiência.</string>
+    <string name="onboarding2_title">Métricas em Tempo Real</string>
+    <string name="onboarding2_subtitle">Visualize o progresso de cada projeto com gráficos interativos e relatórios detalhados.</string>
+    <string name="onboarding3_title">Colaboração Sem Limites</string>
+    <string name="onboarding3_subtitle">Conecte a sua equipa, atribua tarefas e alcance metas juntos de qualquer lugar.</string>
+    <string name="btn_next">Próximo</string>
+    <string name="btn_skip">Passar</string>
+    <string name="btn_start_now">Começar Agora</string>
+    <string name="btn_already_have_account">Já tenho conta</string>
 </resources>

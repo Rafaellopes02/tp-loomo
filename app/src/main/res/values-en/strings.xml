@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Loomo</string>
+    <string name="login_subtitle">Welcome Back!</string>
+    <string name="password_placeholder">Password</string>
+    <string name="forgot_password">Forgot your password?</string>
+    <string name="btn_login">Login</string>
+    <string name="no_account">"Don't have an account? "</string>
+    <string name="register_now">Register</string>
+    <string name="create_account_title">Create Your Account</string>
+    <string name="full_name">Full Name</string>
+    <string name="username">Username</string>
+    <string name="create_account">Create Account</string>
+    <string name="have_account">"Already have an account? "</string>
+    <string name="onboarding1_title">Manage Projects with Ease</string>
+    <string name="onboarding1_subtitle">Organize teams, track tasks and deliver results with clarity and efficiency.</string>
+    <string name="onboarding2_title">Real-Time Metrics</string>
+    <string name="onboarding2_subtitle">Visualize the progress of each project with interactive charts and detailed reports.</string>
+    <string name="onboarding3_title">Limitless Collaboration</string>
+    <string name="onboarding3_subtitle">Connect your team, assign tasks and achieve goals together from anywhere.</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_skip">Skip</string>
+    <string name="btn_start_now">Get Started</string>
+    <string name="btn_already_have_account">I already have an account</string>
+</resources>
