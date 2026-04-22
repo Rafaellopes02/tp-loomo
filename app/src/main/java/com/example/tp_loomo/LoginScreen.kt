@@ -1,5 +1,6 @@
 package com.example.tp_loomo
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,11 +43,21 @@ fun LoginScreen(
     var senha by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    // 1. DETETAR A ORIENTAÇÃO DO ECRÃ
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // 2. AJUSTAR TAMANHOS DINAMICAMENTE
+    // Se estiver deitado (landscape), a imagem e os espaços encolhem para caber melhor
+    val imageSize = if (isLandscape) 100.dp else 200.dp
+    val largeSpacer = if (isLandscape) 16.dp else 48.dp
+    val paddingVertical = if (isLandscape) 16.dp else 32.dp
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp, vertical = 32.dp)
+            .padding(horizontal = 24.dp, vertical = paddingVertical)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -81,16 +93,16 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(largeSpacer))
 
-        // IMAGEM CENTRAL
+        // IMAGEM CENTRAL COM TAMANHO DINÂMICO
         Image(
             painter = painterResource(id = R.drawable.ic_person_placeholder),
             contentDescription = "Ícone de Login",
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(imageSize)
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(largeSpacer))
 
         TextField(
             value = emailOrUsername,
@@ -159,7 +171,7 @@ fun LoginScreen(
             Text(text = stringResource(id = R.string.btn_login), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(largeSpacer))
 
         Row(
             horizontalArrangement = Arrangement.Center,
