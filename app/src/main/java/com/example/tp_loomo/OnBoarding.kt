@@ -278,6 +278,7 @@ fun OnboardingLayout(
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun OnboardingScreenPreview() {
