@@ -34,10 +34,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TploomoTheme {
-                // Estados: 0 = Splash, 1 = Onboarding, 2 = SignUp, 3 = Login
+                // Estados: 0 = Splash, 1 = Onboarding, 2 = SignUp, 3 = Login, 4 = DashboardUser
                 var currentScreen by remember { mutableStateOf(0) }
 
-                // Temporizador para a Splash Screen
                 LaunchedEffect(key1 = true) {
                     delay(3000L)
                     currentScreen = 1
@@ -57,8 +56,9 @@ class MainActivity : ComponentActivity() {
                     3 -> LoginScreen(
                         onBackClick = { currentScreen = 1 },
                         onRegisterClick = { currentScreen = 2 },
-                        onLoginClick = { /* Futura Home */ }
+                        onLoginClick = { currentScreen = 4 }
                     )
+                    4 -> DashboardUserScreen()
                 }
             }
         }

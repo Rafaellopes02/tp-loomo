@@ -28,6 +28,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// IMPORTS DO SUPABASE, CORROTINAS E SERIALIZAÇÃO
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+
+// Classe de dados para ajudar o Kotlin a ler o email da tabela profiles
+@Serializable
+data class ProfileEmail(val email: String)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -43,12 +53,14 @@ fun LoginScreen(
     var senha by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // 1. DETETAR A ORIENTAÇÃO DO ECRÃ
+    // VARIÁVEIS DE ESTADO PARA O LOGIN
+    val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    // 2. AJUSTAR TAMANHOS DINAMICAMENTE
-    // Se estiver deitado (landscape), a imagem e os espaços encolhem para caber melhor
     val imageSize = if (isLandscape) 100.dp else 200.dp
     val largeSpacer = if (isLandscape) 16.dp else 48.dp
     val paddingVertical = if (isLandscape) 16.dp else 32.dp
@@ -95,7 +107,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(largeSpacer))
 
-        // IMAGEM CENTRAL COM TAMANHO DINÂMICO
+        // IMAGEM CENTRAL
         Image(
             painter = painterResource(id = R.drawable.ic_person_placeholder),
             contentDescription = "Ícone de Login",
@@ -109,6 +121,7 @@ fun LoginScreen(
             onValueChange = { emailOrUsername = it },
             placeholder = { Text(text = stringResource(id = R.string.username), color = iconColor) },
             leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Ícone Utilizador", tint = iconColor) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
@@ -155,20 +168,83 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentWidth(Alignment.End)
-                .clickable { /* Lógica */ }
+                .clickable { /* Lógica futura de recuperar pass */ }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // MOSTRAR ERRO, SE EXISTIR
+        errorMessage?.let {
+            Text(text = it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+        }
+
+        // BOTÃO DE LOGIN "DETETIVE"
         Button(
-            onClick = onLoginClick,
+            onClick = {
+                coroutineScope.launch {
+                    isLoading = true
+                    errorMessage = null
+
+                    try {
+                        // 1. O utilizador escreveu Email ou Username?
+                        val isEmail = emailOrUsername.contains("@")
+
+                        // 2. Descobrir qual o email verdadeiro para abrir o cofre
+                        val emailToLogin = if (isEmail) {
+                            emailOrUsername // Se tem '@', usamos exatamente o que ele escreveu
+                        } else {
+                            // Se não tem '@', vamos à tabela profiles procurar o email deste username!
+                            val perfis = supabase.postgrest["profiles"]
+                                .select {
+                                    filter {
+                                        eq("username", emailOrUsername)
+                                    }
+                                }.decodeList<ProfileEmail>()
+
+                            // Se a lista vier vazia, esse username não existe
+                            if (perfis.isEmpty()) {
+                                throw Exception("Username não encontrado.")
+                            }
+
+                            // Se encontrou, guardamos o email associado a esse username
+                            perfis.first().email
+                        }
+
+                        // 3. Fazer o Login real no "Cofre" do Supabase usando SEMPRE o email
+                        io.github.jan.supabase.gotrue.providers.builtin.Email.let { emailProvider ->
+                            supabase.auth.signInWith(emailProvider) {
+                                this.email = emailToLogin
+                                this.password = senha
+                            }
+                        }
+
+                        // SUCESSO: O utilizador entra na aplicação!
+                        onLoginClick()
+
+                    } catch (e: Exception) {
+                        // Mostra a mensagem de erro correta
+                        if (e.message == "Username não encontrado.") {
+                            errorMessage = e.message
+                        } else {
+                            errorMessage = "Credenciais inválidas. Tenta novamente."
+                        }
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = loomoBlue),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            enabled = !isLoading
         ) {
-            Text(text = stringResource(id = R.string.btn_login), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text(text = stringResource(id = R.string.btn_login), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
 
         Spacer(modifier = Modifier.height(largeSpacer))

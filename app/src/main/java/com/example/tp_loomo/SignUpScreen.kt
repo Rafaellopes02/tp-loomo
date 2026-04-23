@@ -26,6 +26,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.jan.supabase.gotrue.auth
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put // <-- IMPORT CORRIGIDO AQUI!
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,13 +42,18 @@ fun SignUpScreen(
     val iconColor = Color(0xFF9E9E9E)
 
     // Variáveis para guardar o texto que o utilizador escreve
-    var nomeCompleto by remember { mutableStateOf("") }
+    var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
 
     // Variável para controlar se a password está visível
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Variáveis novas para controlar a internet e erros
+    val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -90,11 +99,10 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Formulário
-
+        // FORMULÁRIO
         TextField(
-            value = nomeCompleto,
-            onValueChange = { nomeCompleto = it },
+            value = fullName,
+            onValueChange = { fullName = it },
             placeholder = { Text(text = stringResource(id = R.string.full_name), color = iconColor) },
             leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Ícone Pessoa", tint = iconColor) },
             modifier = Modifier.fillMaxWidth(),
@@ -173,25 +181,64 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // MENSAGEM DE ERRO
+        errorMessage?.let {
+            Text(text = it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+        }
+
         // BOTÃO CRIAR CONTA
         Button(
-            onClick = { /* Lógica */ },
+            onClick = {
+                coroutineScope.launch {
+                    isLoading = true
+                    errorMessage = null
+
+                    try {
+                        io.github.jan.supabase.gotrue.providers.builtin.Email.let { emailProvider ->
+                            supabase.auth.signUpWith(emailProvider) {
+                                this.email = email
+                                this.password = senha
+
+                                // Dados Extra (Metadata)
+                                this.data = buildJsonObject {
+                                    put("full_name", fullName)
+                                    put("username", username)
+                                }
+                            }
+                        }
+
+                        // SUCESSO: Navega para o próximo ecrã
+                        onLoginClick()
+
+                    } catch (e: Exception) {
+                        errorMessage = "Erro ao criar conta: ${e.localizedMessage}"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = loomoBlue),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            enabled = !isLoading // Desativa o botão enquanto carrega
         ) {
-            Text(
-                text = stringResource(id = R.string.create_account),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text(
+                    text = stringResource(id = R.string.create_account),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // RODAPÉ
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
