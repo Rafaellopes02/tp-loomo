@@ -16,39 +16,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// IMPORTS NECESSÁRIOS PARA O SUPABASE
+import coil.compose.AsyncImage // IMPORTANTE: Import do Coil para a foto
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardUserScreen() {
-    val backgroundColor = Color(0xFFFAFAFA)
-
-    // 1. Variável de Estado para guardar o Nome do Utilizador
     var userName by remember { mutableStateOf("A carregar...") }
+    var avatarUrl by remember { mutableStateOf<String?>(null) } // Nova variável para guardar o URL da foto
     val coroutineScope = rememberCoroutineScope()
 
-    // 2. Assim que o ecrã abre, vai procurar quem está com o login feito!
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                // Pede ao Supabase o utilizador atual
                 val currentUser = supabase.auth.currentUserOrNull()
-
-                // Se existir utilizador, lê o "full_name" guardado no registo
                 if (currentUser != null) {
                     val fullName = currentUser.userMetadata?.get("full_name").toString()
-
-                    // Remove as aspas chatas que vêm do formato JSON
                     userName = fullName.replace("\"", "")
+
+                    // Vai buscar a foto, exatamente como fizemos no Perfil
+                    avatarUrl = currentUser.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
                 } else {
-                    userName = "Visitante" // Caso o login tenha expirado
+                    userName = "Visitante"
                 }
             } catch (e: Exception) {
                 userName = "Visitante"
@@ -56,68 +51,46 @@ fun DashboardUserScreen() {
         }
     }
 
-    Scaffold(
-        containerColor = backgroundColor,
-        bottomBar = {
-            FloatingBottomNavBar()
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState())
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Passamos também o URL da foto para o Cabeçalho
+        DashboardHeader(nome = userName, avatarUrl = avatarUrl)
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        ProjectHighlightCard()
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 3. CABEÇALHO COM O NOME VERDADEIRO DA BASE DE DADOS
-            DashboardHeader(nome = userName)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 4. CARTÃO DE PROJETO EM DESTAQUE
-            ProjectHighlightCard()
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 5. SECÇÃO TAREFAS DE HOJE
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Tarefas de Hoje",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Ver todas",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1C61A2)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // LISTA DE TAREFAS
-            TaskCard(title = "Desenvolver Protótipo Figma", project = "Trabalho Prático Redes")
-            Spacer(modifier = Modifier.height(12.dp))
-            TaskCard(title = "Criar plano no Trello", project = "Trabalho Prático Redes")
-
-            // Espaço extra no fundo para não ficar colado à barra de navegação
-            Spacer(modifier = Modifier.height(80.dp))
+            Text(text = "Tarefas de Hoje", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(text = "Ver todas", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TaskCard(title = "Desenvolver Protótipo Figma", project = "Trabalho Prático Redes")
+        Spacer(modifier = Modifier.height(12.dp))
+        TaskCard(title = "Criar plano no Trello", project = "Trabalho Prático Redes")
+
+        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
+// ATUALIZADO: Agora recebe o avatarUrl também
 @Composable
-fun DashboardHeader(nome: String) {
+fun DashboardHeader(nome: String, avatarUrl: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        // Imagem de Perfil (Placeholder circular)
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -125,20 +98,31 @@ fun DashboardHeader(nome: String) {
                 .background(Color(0xFFE0E0E0)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
+            // Lógica para mostrar a foto ou o bonequinho cinzento
+            if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = "Foto de Perfil",
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
+            }
         }
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Column {
             Text(
-                text = "Olá, $nome",
+                // ATUALIZADO: Junta a string do "Hello" com a variável "$nome"
+                text = "${stringResource(id = R.string.hello)}$nome",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
             )
             Text(
-                text = "Bem-vindo de volta!",
+                text = stringResource(id = R.string.login_subtitle),
                 fontSize = 14.sp,
                 color = Color.Gray
             )
@@ -155,7 +139,6 @@ fun ProjectHighlightCard() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column {
-            // Imagem de Topo do Cartão (Usando um gradiente como placeholder)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,8 +149,6 @@ fun ProjectHighlightCard() {
                         )
                     )
             )
-
-            // Conteúdo do Cartão
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -182,17 +163,13 @@ fun ProjectHighlightCard() {
                     )
                     Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color(0xFF1C61A2))
                 }
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Desenvolver Protótipo Figma - ",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
-
-                    // Tag de Data
                     Box(
                         modifier = Modifier
                             .background(Color(0xFFFFEBEE), shape = RoundedCornerShape(8.dp))
@@ -229,9 +206,7 @@ fun TaskCard(title: String, project: String) {
                 tint = Color(0xFF1C61A2),
                 modifier = Modifier.size(28.dp)
             )
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column {
                 Text(
                     text = title,
@@ -245,47 +220,6 @@ fun TaskCard(title: String, project: String) {
                     color = Color.Gray
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun FloatingBottomNavBar() {
-    val loomoBlue = Color(0xFF1C61A2)
-    val lightBlue = Color(0xFFD0E0F0)
-
-    Surface(
-        modifier = Modifier
-            .padding(horizontal = 24.dp, vertical = 24.dp)
-            .fillMaxWidth()
-            .height(64.dp),
-        shape = RoundedCornerShape(32.dp),
-        color = Color.White,
-        shadowElevation = 12.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Item Ativo (Home)
-            Box(
-                modifier = Modifier
-                    .background(lightBlue, shape = RoundedCornerShape(20.dp))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Home, contentDescription = "Home", tint = loomoBlue)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Home", color = loomoBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
-            }
-
-            // Itens Inativos
-            Icon(Icons.Outlined.Layers, contentDescription = "Projetos", tint = Color.Gray)
-            Icon(Icons.Outlined.DateRange, contentDescription = "Calendário", tint = Color.Gray)
-            Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
         }
     }
 }

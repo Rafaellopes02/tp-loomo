@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,8 +35,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TploomoTheme {
-                // Estados: 0 = Splash, 1 = Onboarding, 2 = SignUp, 3 = Login, 4 = DashboardUser
-                var currentScreen by remember { mutableStateOf(0) }
+                // Estados: 0 = Splash, 1 = Onboarding, 2 = SignUp, 3 = Login, 4 = MainAppScreen
+                var currentScreen by remember { mutableStateOf(1) }
+                var currentTab by remember { mutableIntStateOf(0) }
 
                 LaunchedEffect(key1 = true) {
                     delay(3000L)
@@ -58,7 +60,19 @@ class MainActivity : ComponentActivity() {
                         onRegisterClick = { currentScreen = 2 },
                         onLoginClick = { currentScreen = 4 }
                     )
-                    4 -> DashboardUserScreen()
+                    4 -> MainAppScreen(
+                        currentTab = currentTab,
+                        onTabChange = { currentTab = it },
+                        onLogout = { currentScreen = 3 },
+                        onEditProfile = { currentScreen = 5 },
+                        onChangePassword = { currentScreen = 6 }
+                    )
+                    5 -> EditProfileScreen(
+                        onBack = { currentScreen = 4 }
+                    )
+                    6 -> ChangePasswordScreen(
+                        onBack = { currentScreen = 4 }
+                    )
                 }
             }
         }

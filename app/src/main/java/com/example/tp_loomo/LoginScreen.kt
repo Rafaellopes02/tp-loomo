@@ -49,8 +49,10 @@ fun LoginScreen(
     val fieldBackgroundColor = Color(0xFFF3F3F3)
     val iconColor = Color(0xFF9E9E9E)
 
-    var emailOrUsername by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
+    // AQUI ESTÁ A MAGIA! Valores iniciais preenchidos para testes:
+    var emailOrUsername by remember { mutableStateOf("rafael.lopes@ipvc.pt") }
+    var senha by remember { mutableStateOf("123456789") }
+
     var passwordVisible by remember { mutableStateOf(false) }
 
     // VARIÁVEIS DE ESTADO PARA O LOGIN

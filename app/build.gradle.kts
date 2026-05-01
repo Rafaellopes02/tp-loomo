@@ -54,8 +54,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.compose.material:material-icons-extended")
-    // SDK do Supabase (para Auth e PostgREST)
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.0")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.0")
+
+    // SDK do Supabase (para Auth, PostgREST e Storage)
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.1.3")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.1.3")
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.1.3")
+
+// Ktor (Motor de rede) e Coil (Para mostrar imagens)
     implementation("io.ktor:ktor-client-android:2.3.11")
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }

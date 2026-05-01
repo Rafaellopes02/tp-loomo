@@ -105,8 +105,8 @@ fun OnboardingLayout(
                     painter = painterResource(id = imageRes),
                     contentDescription = "Ilustração Onboarding",
                     modifier = Modifier
-                        .fillMaxWidth(0.9f) // Ocupa 90% da sua metade
-                        .height(200.dp) // Um pouco mais baixa para caber bem deitada
+                        .fillMaxWidth(0.9f)
+                        .height(200.dp)
                 )
             }
 
@@ -123,7 +123,7 @@ fun OnboardingLayout(
             ) {
                 Text(
                     text = title,
-                    fontSize = 24.sp, // Letra ligeiramente menor para não esmagar em landscape
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     textAlign = TextAlign.Center,
