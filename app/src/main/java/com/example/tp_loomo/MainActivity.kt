@@ -40,8 +40,11 @@ class MainActivity : ComponentActivity() {
                 var currentTab by remember { mutableIntStateOf(0) }
 
                 LaunchedEffect(key1 = true) {
-                    delay(3000L)
-                    currentScreen = 1
+                    delay(3000)
+
+                    if (currentScreen == 0) {
+                        currentScreen = 1
+                    }
                 }
 
                 // Lógica de Navegação
