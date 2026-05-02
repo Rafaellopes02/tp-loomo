@@ -22,14 +22,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage // IMPORTANTE: Import do Coil para a foto
+import coil.compose.AsyncImage
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardUserScreen() {
     var userName by remember { mutableStateOf("A carregar...") }
-    var avatarUrl by remember { mutableStateOf<String?>(null) } // Nova variável para guardar o URL da foto
+    var avatarUrl by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -39,8 +39,6 @@ fun DashboardUserScreen() {
                 if (currentUser != null) {
                     val fullName = currentUser.userMetadata?.get("full_name").toString()
                     userName = fullName.replace("\"", "")
-
-                    // Vai buscar a foto, exatamente como fizemos no Perfil
                     avatarUrl = currentUser.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
                 } else {
                     userName = "Visitante"
@@ -86,8 +84,6 @@ fun DashboardUserScreen() {
         Spacer(modifier = Modifier.height(80.dp))
     }
 }
-
-// ATUALIZADO: Agora recebe o avatarUrl também
 @Composable
 fun DashboardHeader(nome: String, avatarUrl: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -98,7 +94,6 @@ fun DashboardHeader(nome: String, avatarUrl: String?) {
                 .background(Color(0xFFE0E0E0)),
             contentAlignment = Alignment.Center
         ) {
-            // Lógica para mostrar a foto ou o bonequinho cinzento
             if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
                 AsyncImage(
                     model = avatarUrl,
@@ -115,7 +110,6 @@ fun DashboardHeader(nome: String, avatarUrl: String?) {
 
         Column {
             Text(
-                // ATUALIZADO: Junta a string do "Hello" com a variável "$nome"
                 text = "${stringResource(id = R.string.hello)}$nome",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,

@@ -33,7 +33,7 @@ fun ProfileUserScreen(onLogout: () -> Unit, onEditProfile: () -> Unit, onChangeP
     val coroutineScope = rememberCoroutineScope()
     var nomeCompleto by remember { mutableStateOf("A carregar...") }
     var nomeUtilizador by remember { mutableStateOf("@...") }
-    var avatarUrl by remember { mutableStateOf<String?>(null) } // Nova variável para a foto
+    var avatarUrl by remember { mutableStateOf<String?>(null) }
 
     // Carregar dados reais do Supabase
     LaunchedEffect(Unit) {
@@ -42,7 +42,6 @@ fun ProfileUserScreen(onLogout: () -> Unit, onEditProfile: () -> Unit, onChangeP
             if (user != null) {
                 nomeCompleto = user.userMetadata?.get("full_name").toString().replace("\"", "")
                 nomeUtilizador = "@" + user.userMetadata?.get("username").toString().replace("\"", "")
-                // Carregar o URL da foto
                 avatarUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
             }
         }
@@ -88,10 +87,9 @@ fun ProfileUserScreen(onLogout: () -> Unit, onEditProfile: () -> Unit, onChangeP
                     model = avatarUrl,
                     contentDescription = "Foto de Perfil",
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    contentScale = ContentScale.Crop // Corta a foto para ficar perfeitamente redonda
+                    contentScale = ContentScale.Crop
                 )
             } else {
-                // Se não tiver foto, mostra o ícone de placeholder
                 Icon(
                     Icons.Outlined.Person,
                     contentDescription = "Foto de Perfil Padrão",
@@ -109,7 +107,7 @@ fun ProfileUserScreen(onLogout: () -> Unit, onEditProfile: () -> Unit, onChangeP
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ESTATÍSTICAS (Projetos, Tarefas, Concluidos)
+        // ESTATÍSTICAS
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -138,7 +136,7 @@ fun ProfileUserScreen(onLogout: () -> Unit, onEditProfile: () -> Unit, onChangeP
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // BOTÃO SAIR (LOGOUT)
+        // BOTÃO SAIR
         OutlinedButton(
             onClick = {
                 coroutineScope.launch {

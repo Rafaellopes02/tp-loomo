@@ -86,9 +86,6 @@ fun OnboardingLayout(
     val InactiveDotColor = Color(0xFFD9D9D9)
 
     if (isLandscape) {
-        // ==========================================
-        // LAYOUT MODO PAISAGEM (LANDSCAPE)
-        // ==========================================
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -96,7 +93,6 @@ fun OnboardingLayout(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Metade Esquerda: Apenas a Imagem
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
@@ -112,7 +108,6 @@ fun OnboardingLayout(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Metade Direita: Textos, Pontos e Botões (com scroll para não cortar)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -150,7 +145,7 @@ fun OnboardingLayout(
                         val isActive = (index + 1) == activeDot
                         Box(
                             modifier = Modifier
-                                .height(8.dp) // Pontos ligeiramente mais finos
+                                .height(8.dp)
                                 .width(if (isActive) 24.dp else 8.dp)
                                 .background(
                                     color = if (isActive) LoomoBlue else InactiveDotColor,
@@ -167,7 +162,7 @@ fun OnboardingLayout(
                     onClick = onNextClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp), // Botão ligeiramente mais fino
+                        .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = LoomoBlue),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -189,9 +184,6 @@ fun OnboardingLayout(
             }
         }
     } else {
-        // ==========================================
-        // LAYOUT MODO RETRATO (PORTRAIT) - O TEU ORIGINAL
-        // ==========================================
         Column(
             modifier = Modifier
                 .fillMaxSize()

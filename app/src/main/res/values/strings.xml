@@ -48,4 +48,26 @@
     <string name="newPasswordCharacters">A nova palavra-passe deve ter pelo menos 6 caracteres.</string>
     <string name="passwordMatch">As novas palavras-passes não coincidem!</string>
     <string name="fillAllFields">Preencha todos os campos.</string>
+    <string name="admin">Administrador</string>
+    <string name="totalProjects">Total Projetos</string>
+    <string name="users">Utilizadores</string>
+    <string name="activeTasks">Tarefas Ativas</string>
+    <string name="completedProjects">Projetos Concluídos</string>
+    <string name="quickActions">Ações Rápidas</string>
+    <string name="createNewProject">Criar novo projeto</string>
+    <string name="addUser">Adicionar Utilizador</string>
+    <string name="clickToCreateNewProject">Clique para criar um novo projeto na app</string>
+    <string name="manageAddNewUser">Gerir e adicionar novos utilizadores</string>
+    <string name="exportStatistics">Exportar Estatisticas</string>
+    <string name="exportReports">Exporte relatórios por projeto ou tarefa</string>
+    <string name="createNewUser">Criar novo utilizador</string>
+    <string name="userType">Tipo de Utilizador</string>
+    <string name="create">Criar</string>
+    <string name="normalUser">Utilizador Normal</string>
+    <string name="manager">Gestor</string>
+    <string name="userCreated">Utilizador Criado com Sucesso!</string>
+    <string name="seeAllUsers">Veja todos os utilizadores da app</string>
+    <string name="all">Todos</string>
+    <string name="managers">Gestores</string>
+    <string name="user">Utilizador</string>
 </resources>

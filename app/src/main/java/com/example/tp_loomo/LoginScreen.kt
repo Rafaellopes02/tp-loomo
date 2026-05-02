@@ -27,14 +27,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// IMPORTS DO SUPABASE, CORROTINAS E SERIALIZAÇÃO
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-
-// Classe de dados para ajudar o Kotlin a ler o email da tabela profiles
 @Serializable
 data class ProfileEmail(val email: String)
 
@@ -49,7 +45,6 @@ fun LoginScreen(
     val fieldBackgroundColor = Color(0xFFF3F3F3)
     val iconColor = Color(0xFF9E9E9E)
 
-    // AQUI ESTÁ A MAGIA! Valores iniciais preenchidos para testes:
     var emailOrUsername by remember { mutableStateOf("rafael.lopes@ipvc.pt") }
     var senha by remember { mutableStateOf("123456789") }
 
@@ -175,12 +170,12 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // MOSTRAR ERRO, SE EXISTIR
+        // MOSTRAR ERRO
         errorMessage?.let {
             Text(text = it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
         }
 
-        // BOTÃO DE LOGIN "DETETIVE"
+        // BOTÃO DE LOGIN
         Button(
             onClick = {
                 coroutineScope.launch {
@@ -188,43 +183,31 @@ fun LoginScreen(
                     errorMessage = null
 
                     try {
-                        // 1. O utilizador escreveu Email ou Username?
                         val isEmail = emailOrUsername.contains("@")
 
-                        // 2. Descobrir qual o email verdadeiro para abrir o cofre
                         val emailToLogin = if (isEmail) {
-                            emailOrUsername // Se tem '@', usamos exatamente o que ele escreveu
+                            emailOrUsername
                         } else {
-                            // Se não tem '@', vamos à tabela profiles procurar o email deste username!
                             val perfis = supabase.postgrest["profiles"]
                                 .select {
                                     filter {
                                         eq("username", emailOrUsername)
                                     }
                                 }.decodeList<ProfileEmail>()
-
-                            // Se a lista vier vazia, esse username não existe
                             if (perfis.isEmpty()) {
                                 throw Exception("Username não encontrado.")
                             }
-
-                            // Se encontrou, guardamos o email associado a esse username
                             perfis.first().email
                         }
-
-                        // 3. Fazer o Login real no "Cofre" do Supabase usando SEMPRE o email
                         io.github.jan.supabase.gotrue.providers.builtin.Email.let { emailProvider ->
                             supabase.auth.signInWith(emailProvider) {
                                 this.email = emailToLogin
                                 this.password = senha
                             }
                         }
-
-                        // SUCESSO: O utilizador entra na aplicação!
                         onLoginClick()
 
                     } catch (e: Exception) {
-                        // Mostra a mensagem de erro correta
                         if (e.message == "Username não encontrado.") {
                             errorMessage = e.message
                         } else {

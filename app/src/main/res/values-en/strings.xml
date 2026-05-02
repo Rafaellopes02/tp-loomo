@@ -46,4 +46,26 @@
     <string name="newPasswordCharacters">The new password must be at least 6 characters long.</string>
     <string name="passwordMatch">The new passwords don\'t match!</string>
     <string name="fillAllFields">Fill in all the fields.</string>
+    <string name="admin">Administrator</string>
+    <string name="totalProjects">Total Projects</string>
+    <string name="users">Users</string>
+    <string name="activeTasks">Active Tasks</string>
+    <string name="completedProjects">Completed Projects</string>
+    <string name="quickActions">Quick Actions</string>
+    <string name="createNewProject">Create new project</string>
+    <string name="addUser">Add User</string>
+    <string name="clickToCreateNewProject">Click to create a new project in the app</string>
+    <string name="manageAddNewUser">Manage and add new users</string>
+    <string name="exportStatistics">Export Statistics</string>
+    <string name="exportReports">Export reports by project or task</string>
+    <string name="createNewUser">Create new user</string>
+    <string name="userType">User Type</string>
+    <string name="create">Create</string>
+    <string name="normalUser">User</string>
+    <string name="manager">Manager</string>
+    <string name="userCreated">User Created Successfully!</string>
+    <string name="seeAllUsers">See all app users</string>
+    <string name="all">All</string>
+    <string name="managers">Managers</string>
+    <string name="user">User</string>
 </resources>

@@ -199,15 +199,12 @@ fun SignUpScreen(
                                 this.email = email
                                 this.password = senha
 
-                                // Dados Extra (Metadata)
                                 this.data = buildJsonObject {
                                     put("full_name", fullName)
                                     put("username", username)
                                 }
                             }
                         }
-
-                        // SUCESSO: Navega para o próximo ecrã
                         onLoginClick()
 
                     } catch (e: Exception) {
@@ -222,7 +219,7 @@ fun SignUpScreen(
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = loomoBlue),
             shape = RoundedCornerShape(16.dp),
-            enabled = !isLoading // Desativa o botão enquanto carrega
+            enabled = !isLoading
         ) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))

@@ -1,6 +1,5 @@
 package com.example.tp_loomo
 
-import android.R.attr.data
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,11 +27,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -41,23 +42,26 @@ import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen(onBack: () -> Unit) {
+fun EditProfileScreen(
+    onBack: () -> Unit,
+    targetUserId: String? = null,
+    onUserDeleted: () -> Unit = {}
+) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val loomoBlue = Color(0xFF1C61A2)
     val fieldBg = Color(0xFFF3F3F3)
-
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var avatarUrl by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
-
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val currentUserId = targetUserId ?: supabase.auth.currentUserOrNull()?.id
 
-    // LAUNCHER DO SELETOR DE FOTOS DO ANDROID
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -65,17 +69,12 @@ fun EditProfileScreen(onBack: () -> Unit) {
             coroutineScope.launch {
                 isUploadingPhoto = true
                 try {
-                    val userId = supabase.auth.currentUserOrNull()?.id ?: return@launch
+                    val userId = currentUserId ?: return@launch
 
-                    // 1. Converter a imagem em bytes
                     val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
                     if (bytes != null) {
-                        // 2. Criar um nome único para a foto
                         val filename = "${userId}_${UUID.randomUUID()}.jpg"
-
                         supabase.storage["avatars"].upload(filename, bytes, upsert = true)
-
-                        // 4. Obter o URL público da foto
                         val publicUrl = supabase.storage["avatars"].publicUrl(filename)
                         avatarUrl = publicUrl
                     }
@@ -89,12 +88,33 @@ fun EditProfileScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        val user = supabase.auth.currentUserOrNull()
-        if (user != null) {
-            fullName = user.userMetadata?.get("full_name").toString().replace("\"", "")
-            username = user.userMetadata?.get("username").toString().replace("\"", "")
-            avatarUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
-            email = user.email ?: ""
+        if (targetUserId != null) {
+            coroutineScope.launch {
+                try {
+                    val result = supabase.postgrest["profiles"]
+                        .select(columns = Columns.list("id", "full_name", "username", "avatar_url", "role", "email")) {
+                            filter { eq("id", targetUserId) }
+                        }
+                        .decodeSingle<UserProfile>()
+
+                    fullName = result.full_name ?: ""
+                    username = result.username ?: ""
+                    avatarUrl = result.avatar_url
+                    email = result.email ?: "Sem e-mail registado"
+
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Erro ao carregar dados do utilizador", Toast.LENGTH_SHORT).show()
+                    onBack()
+                }
+            }
+        } else {
+            val user = supabase.auth.currentUserOrNull()
+            if (user != null) {
+                fullName = user.userMetadata?.get("full_name")?.toString()?.replace("\"", "") ?: ""
+                username = user.userMetadata?.get("username")?.toString()?.replace("\"", "") ?: ""
+                avatarUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
+                email = user.email ?: ""
+            }
         }
     }
 
@@ -153,7 +173,7 @@ fun EditProfileScreen(onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(stringResource(id = R.string.edit), modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.End, color = loomoBlue, fontWeight = FontWeight.Bold)
+        Text(stringResource(id = R.string.edit), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End, color = loomoBlue, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -175,26 +195,25 @@ fun EditProfileScreen(onBack: () -> Unit) {
                         val nomeLimpo = fullName.trim()
                         val userLimpo = username.trim()
 
-                        val userId = supabase.auth.currentUserOrNull()?.id
-
-                        // 1. Atualizar Auth
-                        supabase.auth.modifyUser {
-                            data = buildJsonObject {
-                                put("full_name", nomeLimpo)
-                                put("username", userLimpo)
-                                if (avatarUrl != null) put("avatar_url", avatarUrl)
+                        if (targetUserId == null) {
+                            supabase.auth.modifyUser {
+                                data = buildJsonObject {
+                                    put("full_name", nomeLimpo)
+                                    put("username", userLimpo)
+                                    if (avatarUrl != null) put("avatar_url", avatarUrl)
+                                }
                             }
                         }
 
-                        // 2. Atualizar na Tabela Profiles
-                        if (userId != null) {
+                        if (currentUserId != null) {
                             val updateData = buildJsonObject {
                                 put("full_name", nomeLimpo)
                                 put("username", userLimpo)
+                                if (avatarUrl != null) put("avatar_url", avatarUrl!!)
                             }
 
                             supabase.postgrest["profiles"].update(updateData) {
-                                filter { eq("id", userId) }
+                                filter { eq("id", currentUserId) }
                             }
                         }
 
@@ -222,10 +241,56 @@ fun EditProfileScreen(onBack: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        // BOTÃO REMOVER
+        if (targetUserId != null) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)) // Vermelho
+            ) {
+                Text("Remover Utilizador", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(100.dp))
+    }
+
+    // ALERTA DE CONFIRMAÇÃO PARA APAGAR
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar Utilizador", fontWeight = FontWeight.Bold) },
+            text = { Text("Pretende mesmo eliminar este utilizador? Esta ação não pode ser desfeita e removerá todos os dados a ele associados.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            try {
+                                if (targetUserId != null) {
+                                    supabase.postgrest["profiles"].delete { filter { eq("id", targetUserId) } }
+                                    Toast.makeText(context, "Utilizador removido com sucesso!", Toast.LENGTH_SHORT).show()
+                                    showDeleteDialog = false
+                                    onUserDeleted()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro ao remover: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Sim, eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            }
+        )
     }
 }
-
 @Composable
 fun EditField(value: String, onValueChange: (String) -> Unit, fieldBg: Color, enabled: Boolean = true) {
     TextField(

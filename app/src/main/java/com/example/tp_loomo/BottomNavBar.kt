@@ -18,13 +18,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+data class BottomNavItem(val title: String, val icon: ImageVector)
+
 @Composable
 fun FloatingBottomNavBar(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    currentRole: String
 ) {
     val loomoBlue = Color(0xFF1C61A2)
     val lightBlue = Color(0xFFD0E0F0)
+    val navItems = when (currentRole) {
+        "admin" -> listOf(
+            BottomNavItem("Home", Icons.Outlined.Home),
+            BottomNavItem("Projetos", Icons.Outlined.Layers),
+            BottomNavItem("Estatísticas", Icons.Outlined.TrendingUp),
+            BottomNavItem("Utilizadores", Icons.Outlined.People),
+            BottomNavItem("Perfil", Icons.Outlined.Person)
+        )
+        "project_manager" -> listOf(
+            BottomNavItem("Home", Icons.Outlined.Home),
+            BottomNavItem("Projetos", Icons.Outlined.Layers),
+            BottomNavItem("Estatísticas", Icons.Outlined.TrendingUp),
+            BottomNavItem("Perfil", Icons.Outlined.Person)
+        )
+        else -> listOf(
+            // Lista padrão (Utilizador Normal / "user")
+            BottomNavItem("Home", Icons.Outlined.Home),
+            BottomNavItem("Tarefas", Icons.Outlined.Layers),
+            BottomNavItem("Histórico", Icons.Outlined.DateRange),
+            BottomNavItem("Perfil", Icons.Outlined.Person)
+        )
+    }
 
     Surface(
         modifier = Modifier
@@ -40,17 +65,20 @@ fun FloatingBottomNavBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 0: HOME
-            NavBarItem(icon = Icons.Outlined.Home, label = "Home", isSelected = selectedTab == 0, activeColor = loomoBlue, activeBgColor = lightBlue, onClick = { onTabSelected(0) })
-            // 1: PROJETOS
-            NavBarItem(icon = Icons.Outlined.Layers, label = "Projetos", isSelected = selectedTab == 1, activeColor = loomoBlue, activeBgColor = lightBlue, onClick = { onTabSelected(1) })
-            // 2: HISTORICO
-            NavBarItem(icon = Icons.Outlined.DateRange, label = "Histórico", isSelected = selectedTab == 2, activeColor = loomoBlue, activeBgColor = lightBlue, onClick = { onTabSelected(2) })
-            // 3: PERFIL
-            NavBarItem(icon = Icons.Outlined.Person, label = "Perfil", isSelected = selectedTab == 3, activeColor = loomoBlue, activeBgColor = lightBlue, onClick = { onTabSelected(3) })
+            navItems.forEachIndexed { index, item ->
+                NavBarItem(
+                    icon = item.icon,
+                    label = item.title,
+                    isSelected = selectedTab == index,
+                    activeColor = loomoBlue,
+                    activeBgColor = lightBlue,
+                    onClick = { onTabSelected(index) }
+                )
+            }
         }
     }
 }
+
 @Composable
 fun NavBarItem(icon: ImageVector, label: String, isSelected: Boolean, activeColor: Color, activeBgColor: Color, onClick: () -> Unit) {
     if (isSelected) {
@@ -72,7 +100,9 @@ fun NavBarItem(icon: ImageVector, label: String, isSelected: Boolean, activeColo
             imageVector = icon,
             contentDescription = label,
             tint = Color.Gray,
-            modifier = Modifier.clickable { onClick() }.padding(8.dp)
+            modifier = Modifier
+                .clickable { onClick() }
+                .padding(8.dp)
         )
     }
 }
