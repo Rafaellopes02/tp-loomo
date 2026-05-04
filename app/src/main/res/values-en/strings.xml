@@ -68,4 +68,9 @@
     <string name="all">All</string>
     <string name="managers">Managers</string>
     <string name="user">User</string>
+    <string name="projectTitle">Project Title</string>
+    <string name="description">Description</string>
+    <string name="projectCreated">Project Created Successfully!</string>
+    <string name="projectDeadline">Deadline</string>
+    <string name="add">Add</string>
 </resources>

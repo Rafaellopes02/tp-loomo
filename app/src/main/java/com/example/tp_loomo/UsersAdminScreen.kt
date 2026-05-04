@@ -34,6 +34,8 @@ data class UserProfile(
     val full_name: String? = null,
     val username: String? = null,
     val avatar_url: String? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null,
     val role: String,
     val email: String? = null
 )

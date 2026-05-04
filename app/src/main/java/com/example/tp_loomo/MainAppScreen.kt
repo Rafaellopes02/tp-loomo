@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController // IMPORT ADICIONADO AQUI
 import kotlinx.serialization.Serializable
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -33,7 +34,8 @@ fun MainAppScreen(
     onTabChange: (Int) -> Unit,
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
-    onChangePassword: () -> Unit
+    onChangePassword: () -> Unit,
+    navController: NavController // ADICIONADO AQUI PARA A NAVEGAÇÃO
 ) {
 
     val backgroundColor = Color(0xFFFAFAFA)
@@ -82,7 +84,7 @@ fun MainAppScreen(
                 0 -> {
                     // SEPARADOR 0: HOME
                     when (currentRole) {
-                        "admin" -> DashboardAdminScreen()
+                        "admin" -> DashboardAdminScreen(navController = navController) // PASSAMOS O CONTROLADOR AQUI
                         "project_manager" -> DashboardManagerScreen()
                         "loading" -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = Color(0xFF1C61A2))

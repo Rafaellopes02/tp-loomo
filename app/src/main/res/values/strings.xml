@@ -70,4 +70,9 @@
     <string name="all">Todos</string>
     <string name="managers">Gestores</string>
     <string name="user">Utilizador</string>
+    <string name="projectTitle">Título do projeto</string>
+    <string name="description">Descrição</string>
+    <string name="projectCreated">Projeto Criado com Sucesso!</string>
+    <string name="projectDeadline">Prazo-Limite</string>
+    <string name="add">Adicionar</string>
 </resources>
