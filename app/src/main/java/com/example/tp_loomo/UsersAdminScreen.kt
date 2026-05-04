@@ -1,6 +1,7 @@
 package com.example.tp_loomo
 
 import android.widget.Toast
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -39,6 +40,16 @@ data class UserProfile(
     val role: String,
     val email: String? = null
 )
+
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun UsersAdminScreenPreview() {
+    UsersAdminScreen()
+}
+
+
+
 
 @Composable
 fun UsersAdminScreen() {
@@ -93,13 +104,16 @@ fun UsersAdminScreen() {
     } else {
         // ECRÃ NORMAL DA LISTA
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA))) {
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+            Column(modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.height(32.dp))
-                Text(text = stringResource(id = R.string.users), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                Text(text = stringResource(R.string.seeAllUsers), fontSize = 14.sp, color = Color.Gray)
+                Text(text = stringResource(id = R.string.users), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(text = stringResource(R.string.seeAllUsers), fontSize = 18.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally) // Corrigido aqui!
+                ) {
                     FilterChipCustom(stringResource(R.string.all), isSelected = selectedFilter == "Todos") { selectedFilter = "Todos" }
                     FilterChipCustom(stringResource(R.string.managers), isSelected = selectedFilter == "Gestores") { selectedFilter = "Gestores" }
                     FilterChipCustom(stringResource(R.string.users), isSelected = selectedFilter == "Utilizadores") { selectedFilter = "Utilizadores" }
@@ -187,6 +201,9 @@ fun UserCard(user: UserProfile, onClick: () -> Unit) {
                     Text(text = roleName, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
                 }
             }
+
         }
     }
+
+
 }
