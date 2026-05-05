@@ -1,4 +1,4 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,34 +26,30 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.jan.supabase.gotrue.auth
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put // <-- IMPORT CORRIGIDO AQUI!
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tp_loomo.R
+import com.example.tp_loomo.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onBackClick: () -> Unit = {},
-    onLoginClick: () -> Unit = {}
+    onLoginClick: () -> Unit = {},
+    viewModel: AuthViewModel = viewModel()
 ) {
     val loomoBlue = Color(0xFF1C61A2)
     val fieldBackgroundColor = Color(0xFFF3F3F3)
     val iconColor = Color(0xFF9E9E9E)
 
-    // Variáveis para guardar o texto que o utilizador escreve
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
-
-    // Variável para controlar se a password está visível
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Variáveis novas para controlar a internet e erros
-    val coroutineScope = rememberCoroutineScope()
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // Lemos os estados do ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
 
     Column(
         modifier = Modifier
@@ -64,38 +60,17 @@ fun SignUpScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // CABEÇALHO
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    modifier = Modifier.size(28.dp)
-                )
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            IconButton(onClick = onBackClick, modifier = Modifier.align(Alignment.CenterStart)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", modifier = Modifier.size(28.dp))
             }
-            Text(
-                text = stringResource(id = R.string.create_account_title),
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                lineHeight = 36.sp,
-                textAlign = TextAlign.Center
-            )
+            Text(text = stringResource(id = R.string.create_account_title), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.Black, lineHeight = 36.sp, textAlign = TextAlign.Center)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // FOTO DE PERFIL
-        Image(
-            painter = painterResource(id = R.drawable.ic_camera_placeholder),
-            contentDescription = "Adicionar foto de perfil",
-            modifier = Modifier.size(180.dp)
-        )
+        Image(painter = painterResource(id = R.drawable.ic_camera_placeholder), contentDescription = "Adicionar foto de perfil", modifier = Modifier.size(180.dp))
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -104,15 +79,10 @@ fun SignUpScreen(
             value = fullName,
             onValueChange = { fullName = it },
             placeholder = { Text(text = stringResource(id = R.string.full_name), color = iconColor) },
-            leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Ícone Pessoa", tint = iconColor) },
+            leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = iconColor) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = fieldBackgroundColor,
-                unfocusedContainerColor = fieldBackgroundColor,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = TextFieldDefaults.colors(focusedContainerColor = fieldBackgroundColor, unfocusedContainerColor = fieldBackgroundColor, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
             singleLine = true
         )
 
@@ -125,12 +95,7 @@ fun SignUpScreen(
             leadingIcon = { Text("@", fontSize = 20.sp, color = iconColor, modifier = Modifier.padding(start = 12.dp, end = 4.dp)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = fieldBackgroundColor,
-                unfocusedContainerColor = fieldBackgroundColor,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = TextFieldDefaults.colors(focusedContainerColor = fieldBackgroundColor, unfocusedContainerColor = fieldBackgroundColor, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
             singleLine = true
         )
 
@@ -140,16 +105,11 @@ fun SignUpScreen(
             value = email,
             onValueChange = { email = it },
             placeholder = { Text(text = stringResource(id = R.string.email), color = iconColor) },
-            leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = "Ícone Email", tint = iconColor) },
+            leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = iconColor) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = fieldBackgroundColor,
-                unfocusedContainerColor = fieldBackgroundColor,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = TextFieldDefaults.colors(focusedContainerColor = fieldBackgroundColor, unfocusedContainerColor = fieldBackgroundColor, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
             singleLine = true
         )
 
@@ -159,7 +119,7 @@ fun SignUpScreen(
             value = senha,
             onValueChange = { senha = it },
             placeholder = { Text(text = stringResource(id = R.string.password_placeholder), color = iconColor) },
-            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = "Ícone Cadeado", tint = iconColor) },
+            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = iconColor) },
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -170,12 +130,7 @@ fun SignUpScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = fieldBackgroundColor,
-                unfocusedContainerColor = fieldBackgroundColor,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = TextFieldDefaults.colors(focusedContainerColor = fieldBackgroundColor, unfocusedContainerColor = fieldBackgroundColor, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
             singleLine = true
         )
 
@@ -189,34 +144,16 @@ fun SignUpScreen(
         // BOTÃO CRIAR CONTA
         Button(
             onClick = {
-                coroutineScope.launch {
-                    isLoading = true
-                    errorMessage = null
-
-                    try {
-                        io.github.jan.supabase.gotrue.providers.builtin.Email.let { emailProvider ->
-                            supabase.auth.signUpWith(emailProvider) {
-                                this.email = email
-                                this.password = senha
-
-                                this.data = buildJsonObject {
-                                    put("full_name", fullName)
-                                    put("username", username)
-                                }
-                            }
-                        }
-                        onLoginClick()
-
-                    } catch (e: Exception) {
-                        errorMessage = "Erro ao criar conta: ${e.localizedMessage}"
-                    } finally {
-                        isLoading = false
-                    }
-                }
+                // AQUI CHAMAMOS O VIEWMODEL
+                viewModel.signUp(
+                    fullName = fullName,
+                    username = username,
+                    email = email,
+                    pass = senha,
+                    onSuccess = { onLoginClick() }
+                )
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = loomoBlue),
             shape = RoundedCornerShape(16.dp),
             enabled = !isLoading
@@ -224,36 +161,16 @@ fun SignUpScreen(
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text(
-                    text = stringResource(id = R.string.create_account),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Text(text = stringResource(id = R.string.create_account), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // RODAPÉ
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Text(text = stringResource(id = R.string.have_account), color = Color.Black, fontSize = 16.sp)
-            Text(
-                text = stringResource(id = R.string.btn_login),
-                color = loomoBlue,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                modifier = Modifier.clickable { onLoginClick() }
-            )
+            Text(text = stringResource(id = R.string.btn_login), color = loomoBlue, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.clickable { onLoginClick() })
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SignUpScreenPreview() {
-    SignUpScreen()
 }

@@ -16,7 +16,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.tp_loomo.ui.auth.LoginScreen
+import com.example.tp_loomo.ui.auth.OnboardingScreen
+import com.example.tp_loomo.ui.auth.SignUpScreen
+import com.example.tp_loomo.ui.main.MainAppScreen
+import com.example.tp_loomo.ui.profile.ChangePasswordScreen
+import com.example.tp_loomo.ui.profile.EditProfileScreen
+import com.example.tp_loomo.ui.project.ProjectDetailsScreen
 import com.example.tp_loomo.ui.theme.TploomoTheme
+import com.example.tp_loomo.data.remote.api.supabase
+import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -27,15 +36,25 @@ class MainActivity : ComponentActivity() {
             TploomoTheme {
                 val navController = rememberNavController()
 
-                // Variável para controlar a Tab ativa no MainAppScreen
+                // Estado para controlar a aba ativa no MainAppScreen
                 var currentTab by remember { mutableIntStateOf(0) }
 
                 NavHost(navController = navController, startDestination = "splash") {
 
+                    // SPLASH SCREEN com Lógica de Auto-Login
                     composable("splash") {
                         SplashScreen {
-                            navController.navigate("onboarding") {
-                                popUpTo("splash") { inclusive = true }
+                            val user = supabase.auth.currentUserOrNull()
+                            if (user != null) {
+                                // Usuário logado -> Vai para a Home
+                                navController.navigate("main") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                // Sem sessão -> Vai para o Onboarding
+                                navController.navigate("onboarding") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
                             }
                         }
                     }
@@ -72,7 +91,7 @@ class MainActivity : ComponentActivity() {
                             onTabChange = { currentTab = it },
                             onLogout = {
                                 navController.navigate("login") {
-                                    popUpTo(0) // Limpa toda a stack ao fazer logout
+                                    popUpTo(0) // Limpa o histórico de navegação
                                 }
                             },
                             onEditProfile = { navController.navigate("editProfile") },
@@ -90,23 +109,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
-                        route = "projectDetails/{title}/{desc}/{deadline}",
-                        arguments = listOf(
-                            navArgument("title") { type = NavType.StringType },
-                            navArgument("desc") { type = NavType.StringType },
-                            navArgument("deadline") { type = NavType.StringType }
-                        )
+                        route = "projectDetails/{projectId}", // Agora passamos só o ID!
+                        arguments = listOf(navArgument("projectId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val title = backStackEntry.arguments?.getString("title")?.replace("_", " ") ?: ""
-                        val desc = backStackEntry.arguments?.getString("desc")?.replace("_", " ") ?: ""
-                        val deadline = backStackEntry.arguments?.getString("deadline")?.replace("_", " ") ?: ""
+                        val projectId = backStackEntry.arguments?.getInt("projectId") ?: return@composable
 
                         ProjectDetailsScreen(
-                            onBackClick = { navController.popBackStack() },
-                            projectTitle = title,
-                            projectDesc = desc,
-                            deadline = deadline,
-                            avatarUrls = listOf(null, null, null) // Simulamos os avatars iniciais
+                            projectId = projectId,
+                            onBackClick = { navController.popBackStack() }
                         )
                     }
                 }
@@ -115,12 +125,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Repara que a SplashScreen está CÁ FORA, no nível principal do ficheiro!
 @Composable
 fun SplashScreen(onTimeout: () -> Unit) {
-    val LoomoBlue = Color(0xFF1C61A2)
+    val loomoBlue = Color(0xFF1C61A2)
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         delay(3000)
         onTimeout()
     }
@@ -128,7 +137,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(LoomoBlue),
+            .background(loomoBlue),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
