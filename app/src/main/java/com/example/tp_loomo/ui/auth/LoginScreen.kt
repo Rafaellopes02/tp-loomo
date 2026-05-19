@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,7 +20,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -42,8 +40,10 @@ fun LoginScreen(
     val fieldBackgroundColor = Color(0xFFF3F3F3)
     val iconColor = Color(0xFF9E9E9E)
 
-    var emailOrUsername by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
+    // AQUI ESTÁ A MAGIA! Colocámos os valores iniciais dentro do mutableStateOf
+    var emailOrUsername by remember { mutableStateOf("rafael.lopes@ipvc.pt") }
+    var senha by remember { mutableStateOf("123456789") }
+
     var passwordVisible by remember { mutableStateOf(false) }
 
     val isLoading = viewModel.isLoading

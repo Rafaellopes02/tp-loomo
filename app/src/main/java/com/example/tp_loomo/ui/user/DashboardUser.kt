@@ -81,7 +81,7 @@ fun DashboardUserScreen(
 
         // Lista de projetos do utilizador
         projects.forEach { project ->
-            TaskCard(title = project.name, project = project.status)
+            TaskCard(title = project.name, project = project.status ?: "Ativo")
             Spacer(modifier = Modifier.height(12.dp))
         }
 

@@ -19,6 +19,7 @@ import com.example.tp_loomo.ui.manager.DashboardManagerScreen
 import com.example.tp_loomo.ui.user.DashboardUserScreen
 import com.example.tp_loomo.ui.profile.ProfileUserScreen
 import com.example.tp_loomo.ui.admin.DashboardAdminScreen
+import com.example.tp_loomo.ui.admin.ProjectsAdminScreen
 import com.example.tp_loomo.ui.admin.UsersAdminScreen
 import com.example.tp_loomo.ui.components.FloatingBottomNavBar
 import com.example.tp_loomo.viewmodel.MainViewModel
@@ -74,7 +75,14 @@ fun MainAppScreen(
                         else -> DashboardUserScreen()
                     }
                 }
-                1 -> PlaceholderScreen("Ecrã de Projetos em Construção")
+                1 -> {
+                    if (currentRole == "admin") {
+                        // CORREÇÃO AQUI: Adicionado o navController
+                        ProjectsAdminScreen(navController = navController)
+                    } else {
+                        PlaceholderScreen("Ecrã de Histórico em Construção")
+                    }
+                }
                 2 -> {
                     if (currentRole == "admin" || currentRole == "project_manager") {
                         PlaceholderScreen("Ecrã de Estatísticas em Construção")

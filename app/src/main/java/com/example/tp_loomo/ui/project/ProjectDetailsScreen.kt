@@ -4,17 +4,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -24,13 +32,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
 
+data class MockTask(val title: String, val time: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectDetailsScreen(
     projectId: Int,
     onBackClick: () -> Unit,
     viewModel: ProjectDetailsViewModel = viewModel()
 ) {
-    var selectedTab by remember { mutableStateOf("All") }
+    var selectedTab by remember { mutableStateOf("Todas") }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // --- ESTADOS DO MODO DE EDIÇÃO ---
+    var isEditing by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
 
     LaunchedEffect(projectId) {
         viewModel.loadProjectDetails(projectId)
@@ -40,114 +58,261 @@ fun ProjectDetailsScreen(
     val teamMembers = viewModel.teamMembers
     val isLoading = viewModel.isLoading
 
+    val mockTasks = listOf(
+        MockTask("Desenvolver Protótipo Figma", "Hoje - 17.00H"),
+        MockTask("Cumprir Requisitos Funcionais", "Amanhã - 19.30H"),
+        MockTask("Modelo de Dados", "17 Mai 2026 - 10.00H")
+    )
+
     if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Color(0xFF1C61A2))
         }
         return
     }
 
     if (project == null) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
             Text("Projeto não encontrado", color = Color.Gray)
         }
         return
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // --- CABEÇALHO (HEADER) ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                .background(Color(0xFFB5B5B5))
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 48.dp, start = 16.dp, end = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                IconButton(onClick = onBackClick, modifier = Modifier.size(60.dp)) {
-                    Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(50.dp))
-                }
+            // --- CABEÇALHO ---
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
+                        .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(40.dp))
+                        }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Projeto", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "Detalhes do projeto", color = Color.White, fontSize = 16.sp)
-                }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = "Projeto", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(text = "Veja detalhes do projeto", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
 
-                IconButton(onClick = { /* Opções futuras */ }) {
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.White, modifier = Modifier.size(36.dp))
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.White, modifier = Modifier.size(32.dp))
+                            }
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.background(Color(0xFFF5F5F5), shape = RoundedCornerShape(16.dp)).border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Mudar fundo", color = Color.Black, fontWeight = FontWeight.Medium) },
+                                    leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
+                                    onClick = { showMenu = false }
+                                )
+
+                                DropdownMenuItem(
+                                    text = { Text("Editar", color = Color.Black, fontWeight = FontWeight.Medium) },
+                                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color.Black) },
+                                    onClick = {
+                                        showMenu = false
+                                        editName = project.name
+                                        editDescription = project.description ?: ""
+                                        isEditing = true
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
+
+                                DropdownMenuItem(
+                                    text = { Text("Concluído", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold) },
+                                    leadingIcon = { Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32)) },
+                                    onClick = { showMenu = false }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
+
+                                DropdownMenuItem(
+                                    text = { Text("Eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
+                                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "Eliminar", tint = Color(0xFFD32F2F)) },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteDialog = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)) {
+                        OverlappingAvatars(avatarUrls = teamMembers.map { it.avatar_url })
+                    }
                 }
             }
 
-            Box(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)
-            ) {
-                OverlappingAvatars(avatarUrls = teamMembers.map { it.avatar_url })
+            item {
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+
+                    if (isEditing) {
+                        OutlinedTextField(
+                            value = editName,
+                            onValueChange = { editName = it },
+                            label = { Text("Nome do Projeto") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = editDescription,
+                            onValueChange = { editDescription = it },
+                            label = { Text("Descrição") },
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            TextButton(onClick = { isEditing = false }) {
+                                Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.updateProject(projectId, editName, editDescription) {
+                                        isEditing = false
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(text = project.description ?: "Sem descrição.", fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}",
+                                color = Color(0xFFD32F2F),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
+                        Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
+                    }
+                }
+            }
+
+            // --- TABS (FILTROS) ---
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CustomFilterChip("Todas", selectedTab == "Todas") { selectedTab = "Todas" }
+                    CustomFilterChip("Andamento", selectedTab == "Andamento") { selectedTab = "Andamento" }
+                    CustomFilterChip("Concluído", selectedTab == "Concluído") { selectedTab = "Concluído" }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // --- LISTA DE TAREFAS ---
+            items(mockTasks) { task ->
+                TaskItemCard(title = task.title, time = task.time)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        // --- MODAL DE CONFIRMAÇÃO DE ELIMINAÇÃO ---
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text(text = "Eliminar Projeto", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
+                text = { Text(text = "Pretende mesmo eliminar este projeto? Esta ação é permanente e não poderá ser revertida.", fontSize = 15.sp, color = Color.DarkGray) },
+                confirmButton = {
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = {
+                            showDeleteDialog = false
+                        }
+                    ) {
+                        Text("Sim", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Medium)
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
+            )
+        }
+    }
+}
 
-        // --- CONTEÚDO DO PROJETO ---
-        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = project.description ?: "Sem descrição.", fontSize = 14.sp, color = Color.Gray)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- SECÇÃO DO PRAZO E PROGRESSO ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEAEA)).padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}",
-                        color = Color(0xFFD32F2F),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(text = "0%", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Bold) // A ligar às tarefas no futuro
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Barra de Progresso Customizada
-            Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFEEEEEE))) {
-                Box(modifier = Modifier.fillMaxWidth(0.0f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color(0xFF1C61A2)))
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- FILTROS (TABS) ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
-            ) {
-                CustomFilterChip("All", selectedTab == "All") { selectedTab = "All" }
-                CustomFilterChip("OnGoing", selectedTab == "OnGoing") { selectedTab = "OnGoing" }
-                CustomFilterChip("Concluded", selectedTab == "Concluded") { selectedTab = "Concluded" }
+@Composable
+fun TaskItemCard(title: String, time: String) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.FormatListBulleted,
+                contentDescription = null,
+                tint = Color(0xFF1C61A2),
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = time, fontSize = 13.sp, color = Color.Gray)
             }
         }
     }
 }
 
-// COMPONENTES AUXILIARES INALTERADOS
 @Composable
 fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
     val visibleAvatars = avatarUrls.take(maxAvatars)
@@ -156,7 +321,7 @@ fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
     Row(horizontalArrangement = Arrangement.spacedBy((-12).dp)) {
         visibleAvatars.forEach { url ->
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.LightGray),
+                modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color(0xFFFFB74D)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!url.isNullOrEmpty() && url != "null") {
@@ -168,7 +333,7 @@ fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
         }
         if (remaining > 0) {
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.DarkGray),
+                modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.DarkGray),
                 contentAlignment = Alignment.Center
             ) {
                 Text("+$remaining", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -180,9 +345,17 @@ fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
 @Composable
 fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (isSelected) Color(0xFF1C61A2) else Color(0xFFF3F3F3))
-            .clickable { onClick() }.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(if (isSelected) Color(0xFF1C61A2) else Color.Transparent)
+            .clickable { onClick() }
+            .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
-        Text(text = text, color = if (isSelected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = text,
+            color = if (isSelected) Color.White else Color.Gray,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

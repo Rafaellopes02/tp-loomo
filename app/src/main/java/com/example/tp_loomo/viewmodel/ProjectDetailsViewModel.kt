@@ -36,4 +36,25 @@ class ProjectDetailsViewModel : ViewModel() {
             }
         }
     }
+
+    fun deleteProject(id: Int, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val success = repository.deleteProject(id)
+            if (success) {
+                onSuccess()
+            }
+        }
+    }
+
+    fun updateProject(id: Int, newName: String, newDescription: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            isLoading = true
+            val success = repository.updateProject(id, newName, newDescription)
+            if (success) {
+                project = project?.copy(name = newName, description = newDescription)
+                onSuccess()
+            }
+            isLoading = false
+        }
+    }
 }

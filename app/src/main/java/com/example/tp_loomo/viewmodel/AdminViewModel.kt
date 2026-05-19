@@ -3,15 +3,33 @@ package com.example.tp_loomo.viewmodel
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tp_loomo.data.remote.model.Project
 import com.example.tp_loomo.data.repository.AdminRepository
 import com.example.tp_loomo.data.remote.model.UserProfile
+import com.example.tp_loomo.data.repository.ProjectRepository
 import kotlinx.coroutines.launch
 
 class AdminViewModel : ViewModel() {
     private val repository = AdminRepository()
+    private val projectRepository = ProjectRepository()
 
     var isLoading by mutableStateOf(false)
     var usersList by mutableStateOf<List<UserProfile>>(emptyList())
+    var allProjectsList by mutableStateOf<List<Project>>(emptyList())
+        private set
+
+    fun loadAllProjects() {
+        viewModelScope.launch {
+            isLoading = true
+            try {
+                allProjectsList = projectRepository.getAllProjects()
+            } catch (e: Exception) {
+                allProjectsList = emptyList()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     // Funções de carregamento para o Dialog de seleção
     fun loadUsersForSelection(isManager: Boolean) {
