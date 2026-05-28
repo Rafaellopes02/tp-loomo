@@ -1,7 +1,6 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.admin
 
 import android.widget.Toast
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,35 +23,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.tp_loomo.R
+import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.data.remote.model.UserProfile
+import com.example.tp_loomo.ui.profile.EditProfileScreen
+import com.example.tp_loomo.viewmodel.AdminViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-@Serializable
-data class UserProfile(
-    val id: String,
-    val full_name: String? = null,
-    val username: String? = null,
-    val avatar_url: String? = null,
-    val created_at: String? = null,
-    val updated_at: String? = null,
-    val role: String,
-    val email: String? = null
-)
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun UsersAdminScreenPreview() {
-    UsersAdminScreen()
-}
-
-
-
 
 @Composable
-fun UsersAdminScreen() {
+fun UsersAdminScreen(
+    adminViewModel: AdminViewModel = viewModel()
+) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -112,7 +97,7 @@ fun UsersAdminScreen() {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally) // Corrigido aqui!
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                 ) {
                     FilterChipCustom(stringResource(R.string.all), isSelected = selectedFilter == "Todos") { selectedFilter = "Todos" }
                     FilterChipCustom(stringResource(R.string.managers), isSelected = selectedFilter == "Gestores") { selectedFilter = "Gestores" }
@@ -129,10 +114,9 @@ fun UsersAdminScreen() {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 100.dp)
+                        contentPadding = PaddingValues(bottom = 100.dp, start = 24.dp, end = 24.dp)
                     ) {
                         items(filteredUsers) { user ->
-                            // Passa o Clique para o cartão
                             UserCard(user = user, onClick = { userToEditId = user.id })
                         }
                     }
@@ -150,10 +134,13 @@ fun UsersAdminScreen() {
             }
 
             if (showAddUserModal) {
-                AddUserBottomSheet(onDismiss = {
-                    showAddUserModal = false
-                    fetchUsers()
-                })
+                AddUserBottomSheet(
+                    onDismiss = {
+                        showAddUserModal = false
+                        fetchUsers()
+                    },
+                    viewModel = adminViewModel
+                )
             }
         }
     }
@@ -201,9 +188,6 @@ fun UserCard(user: UserProfile, onClick: () -> Unit) {
                     Text(text = roleName, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
                 }
             }
-
         }
     }
-
-
 }

@@ -1,4 +1,4 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

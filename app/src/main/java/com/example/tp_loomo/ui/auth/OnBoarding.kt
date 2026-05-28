@@ -1,4 +1,4 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.auth
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.R
 
 @Composable
 fun OnboardingScreen(

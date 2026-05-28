@@ -1,6 +1,5 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.manager
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,32 +20,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import io.github.jan.supabase.gotrue.auth
-import kotlinx.coroutines.launch
+import com.example.tp_loomo.viewmodel.ManagerViewModel
+import com.example.tp_loomo.viewmodel.ProfileViewModel
 
 @Composable
-fun DashboardManagerScreen() {
-    var userName by remember { mutableStateOf("A carregar...") }
-    var avatarUrl by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
-
+fun DashboardManagerScreen(
+    managerViewModel: ManagerViewModel = viewModel(),
+    profileViewModel: ProfileViewModel = viewModel()
+) {
     LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                val currentUser = supabase.auth.currentUserOrNull()
-                if (currentUser != null) {
-                    val fullName = currentUser.userMetadata?.get("full_name").toString()
-                    userName = fullName.replace("\"", "").substringBefore(" ")
-                    avatarUrl = currentUser.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
-                } else {
-                    userName = "Gestor"
-                }
-            } catch (e: Exception) {
-                userName = "Gestor"
-            }
-        }
+        profileViewModel.loadProfile()
+        managerViewModel.loadDashboardData()
     }
+
+    val userData = profileViewModel.userData
+    val projects = managerViewModel.managedProjects
+    val isLoading = managerViewModel.isLoading
 
     Column(
         modifier = Modifier
@@ -62,9 +53,9 @@ fun DashboardManagerScreen() {
                 modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
+                if (!userData?.avatarUrl.isNullOrEmpty()) {
                     AsyncImage(
-                        model = avatarUrl,
+                        model = userData?.avatarUrl,
                         contentDescription = "Avatar",
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
@@ -75,14 +66,15 @@ fun DashboardManagerScreen() {
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = "Olá, $userName", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                val primeiroNome = userData?.nomeCompleto?.split(" ")?.first() ?: "Gestor"
+                Text(text = "Olá, $primeiroNome", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Text(text = "Bem-vindo de volta!", fontSize = 14.sp, color = Color.Gray)
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Cartões de Estatísticas
+        // Cartões de Estatísticas (Placeholder)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             StatCard(title = "Tarefas Pendentes", value = "8", bgColor = Color(0xFF9EBAE1), modifier = Modifier.weight(1f))
             StatCard(title = "Tarefas Concluídas", value = "10", bgColor = Color(0xFF90D992), modifier = Modifier.weight(1f))
@@ -102,22 +94,31 @@ fun DashboardManagerScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de Projetos
-        ManagerProjectCard(
-            title = "Trabalho Prático Redes",
-            pending = 5,
-            completed = 3,
-            progress = 0.5f,
-            bgColors = listOf(Color(0xFFFF9A9E), Color(0xFFFECFEF))
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        ManagerProjectCard(
-            title = "Projeto IV",
-            pending = 2,
-            completed = 7,
-            progress = 0.75f,
-            bgColors = listOf(Color(0xFF434343), Color(0xFF000000))
-        )
+        // Estado de Carregamento ou Lista
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else if (projects.isEmpty()) {
+            Text(text = "Ainda não tens projetos a teu cargo.", color = Color.Gray)
+        } else {
+            // Lista Dinâmica de Projetos
+            val palette = listOf(
+                listOf(Color(0xFFFF9A9E), Color(0xFFFECFEF)),
+                listOf(Color(0xFFa18cd1), Color(0xFFfbc2eb)),
+                listOf(Color(0xFF84fab0), Color(0xFF8fd3f4)),
+                listOf(Color(0xFF434343), Color(0xFF000000))
+            )
+
+            projects.forEachIndexed { index, project ->
+                ManagerProjectCard(
+                    title = project.name,
+                    pending = 0,
+                    completed = 0,
+                    progress = 0.0f,
+                    bgColors = palette[index % palette.size]
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
 
         Spacer(modifier = Modifier.height(80.dp))
     }

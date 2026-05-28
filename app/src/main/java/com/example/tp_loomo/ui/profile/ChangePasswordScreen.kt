@@ -1,4 +1,4 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.profile
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -23,6 +23,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.R
+import com.example.tp_loomo.data.remote.api.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.coroutines.launch

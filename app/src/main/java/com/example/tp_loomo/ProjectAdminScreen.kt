@@ -29,6 +29,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.ui.admin.FilterChipCustom
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
@@ -176,7 +178,8 @@ fun ProjectsAdminScreen(navController: NavController) {
                         }
                         // 2. Se for um fundo do sistema, convertemos o TEXTO no DESENHO real
                         savedCoverInDb == "fundo_preto" -> R.drawable.fundo_preto
-                        savedCoverInDb == "fundo_branco"-> R.drawable.fundo_branco
+                        savedCoverInDb == "fundo_branco" -> R.drawable.fundo_branco
+                        savedCoverInDb == "fundo_azul" -> R.drawable.fundo_azul
                         savedCoverInDb == "fundo_rosa" -> R.drawable.fundo_rosa
                         // 3. Caso contrário, é o link HTTPS (da galeria ou Unsplash custom)
                         else -> savedCoverInDb

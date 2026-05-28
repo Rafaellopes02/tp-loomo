@@ -1,4 +1,4 @@
-package com.example.tp_loomo
+package com.example.tp_loomo.ui.profile
 
 import android.net.Uri
 import android.widget.Toast
@@ -31,6 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.tp_loomo.R
+import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.data.remote.model.UserProfile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -102,7 +105,7 @@ fun EditProfileScreen(
                     avatarUrl = result.avatar_url
                     email = result.email ?: "Sem e-mail registado"
 
-                } catch (e: Exception) {
+                } catch (_: Exception) { // Aviso amarelo removido (substituindo e por _)
                     Toast.makeText(context, "Erro ao carregar dados do utilizador", Toast.LENGTH_SHORT).show()
                     onBack()
                 }

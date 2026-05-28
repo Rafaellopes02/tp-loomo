@@ -16,7 +16,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.tp_loomo.ui.auth.LoginScreen
+import com.example.tp_loomo.ui.auth.OnboardingScreen
+import com.example.tp_loomo.ui.auth.SignUpScreen
+import com.example.tp_loomo.ui.main.MainAppScreen
+import com.example.tp_loomo.ui.profile.ChangePasswordScreen
+import com.example.tp_loomo.ui.profile.EditProfileScreen
+import com.example.tp_loomo.ui.project.ProjectDetailsScreen
 import com.example.tp_loomo.ui.theme.TploomoTheme
+import com.example.tp_loomo.data.remote.api.supabase
+import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -26,16 +35,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             TploomoTheme {
                 val navController = rememberNavController()
-
-                // Variável para controlar a Tab ativa no MainAppScreen
                 var currentTab by remember { mutableIntStateOf(0) }
 
                 NavHost(navController = navController, startDestination = "splash") {
 
                     composable("splash") {
                         SplashScreen {
-                            navController.navigate("onboarding") {
-                                popUpTo("splash") { inclusive = true }
+                            val user = supabase.auth.currentUserOrNull()
+                            if (user != null) {
+                                navController.navigate("main") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("onboarding") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
                             }
                         }
                     }
@@ -72,7 +86,7 @@ class MainActivity : ComponentActivity() {
                             onTabChange = { currentTab = it },
                             onLogout = {
                                 navController.navigate("login") {
-                                    popUpTo(0) // Limpa toda a stack ao fazer logout
+                                    popUpTo(0)
                                 }
                             },
                             onEditProfile = { navController.navigate("editProfile") },
@@ -89,48 +103,15 @@ class MainActivity : ComponentActivity() {
                         ChangePasswordScreen(onBack = { navController.popBackStack() })
                     }
 
-                    // SUBSTITUI A TUA ROTA DOS DETALHES POR ESTA:
                     composable(
-                        route = "projectDetails/{id}/{title}/{desc}/{deadline}?fotos_url={fotos_url}&avatars={avatars}",
-                        arguments = listOf(
-                            navArgument("id") { type = NavType.IntType },
-                            navArgument("title") { type = NavType.StringType },
-                            navArgument("desc") { type = NavType.StringType },
-                            navArgument("deadline") { type = NavType.StringType },
-                            navArgument("fotos_url") { type = NavType.StringType; nullable = true },
-                            navArgument("avatars") { type = NavType.StringType; nullable = true }
-                        )
+                        route = "projectDetails/{projectId}",
+                        arguments = listOf(navArgument("projectId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val id = backStackEntry.arguments?.getInt("id") ?: 0
-                        val title = backStackEntry.arguments?.getString("title")?.replace("_", " ") ?: ""
-                        val desc = backStackEntry.arguments?.getString("desc")?.replace("_", " ") ?: ""
-                        val deadline = backStackEntry.arguments?.getString("deadline")?.replace("_", " ") ?: ""
-
-                        val fotosUrlRaw = backStackEntry.arguments?.getString("fotos_url")
-                        val fotosUrl = if (fotosUrlRaw == "null") null else fotosUrlRaw
-
-                        // DESCODIFICA OS AVATARES (Desfaz o Base64 à prova de bala)
-                        val avatarsRaw = backStackEntry.arguments?.getString("avatars")
-                        val avatarUrlsList = if (avatarsRaw != null && avatarsRaw != "null" && avatarsRaw.isNotBlank()) {
-                            try {
-                                val decodedBytes = android.util.Base64.decode(avatarsRaw, android.util.Base64.URL_SAFE)
-                                val decodedString = String(decodedBytes, Charsets.UTF_8)
-                                decodedString.split("|") // Separa as fotos todas de novo
-                            } catch (e: Exception) {
-                                listOf(null) // Proteção para nunca crashar
-                            }
-                        } else {
-                            listOf(null) // Se a app não receber avatares, desenha 1 boneco cinzento
-                        }
+                        val projectId = backStackEntry.arguments?.getInt("projectId") ?: return@composable
 
                         ProjectDetailsScreen(
-                            projectId = id,
-                            onBackClick = { navController.popBackStack() },
-                            projectTitle = title,
-                            projectDesc = desc,
-                            deadline = deadline,
-                            avatarUrls = avatarUrlsList,
-                            fotosUrlDaBd = fotosUrl
+                            projectId = projectId,
+                            onBackClick = { navController.popBackStack() }
                         )
                     }
                 }
@@ -139,12 +120,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Repara que a SplashScreen está CÁ FORA, no nível principal do ficheiro!
 @Composable
 fun SplashScreen(onTimeout: () -> Unit) {
-    val LoomoBlue = Color(0xFF1C61A2)
+    val loomoBlue = Color(0xFF1C61A2)
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         delay(3000)
         onTimeout()
     }
@@ -152,7 +132,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(LoomoBlue),
+            .background(loomoBlue),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
