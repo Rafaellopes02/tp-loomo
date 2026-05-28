@@ -94,7 +94,10 @@ fun MainAppScreen(
                 }
                 1 -> {
                     // SEPARADOR 1: PROJETOS
-                    PlaceholderScreen("Ecrã de Projetos em Construção")
+                    when (currentRole) {
+                        "admin" -> ProjectsAdminScreen(navController = navController) // SÓ ADICIONAS ISTO!
+                        else -> PlaceholderScreen("Ecrã de Projetos em Construção")
+                    }
                 }
                 2 -> {
                     // SEPARADOR 2: ESTATÍSTICAS (Admin/Gestor) ou HISTÓRICO (User)

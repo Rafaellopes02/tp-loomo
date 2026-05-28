@@ -89,24 +89,48 @@ class MainActivity : ComponentActivity() {
                         ChangePasswordScreen(onBack = { navController.popBackStack() })
                     }
 
+                    // SUBSTITUI A TUA ROTA DOS DETALHES POR ESTA:
                     composable(
-                        route = "projectDetails/{title}/{desc}/{deadline}",
+                        route = "projectDetails/{id}/{title}/{desc}/{deadline}?fotos_url={fotos_url}&avatars={avatars}",
                         arguments = listOf(
+                            navArgument("id") { type = NavType.IntType },
                             navArgument("title") { type = NavType.StringType },
                             navArgument("desc") { type = NavType.StringType },
-                            navArgument("deadline") { type = NavType.StringType }
+                            navArgument("deadline") { type = NavType.StringType },
+                            navArgument("fotos_url") { type = NavType.StringType; nullable = true },
+                            navArgument("avatars") { type = NavType.StringType; nullable = true }
                         )
                     ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getInt("id") ?: 0
                         val title = backStackEntry.arguments?.getString("title")?.replace("_", " ") ?: ""
                         val desc = backStackEntry.arguments?.getString("desc")?.replace("_", " ") ?: ""
                         val deadline = backStackEntry.arguments?.getString("deadline")?.replace("_", " ") ?: ""
 
+                        val fotosUrlRaw = backStackEntry.arguments?.getString("fotos_url")
+                        val fotosUrl = if (fotosUrlRaw == "null") null else fotosUrlRaw
+
+                        // DESCODIFICA OS AVATARES (Desfaz o Base64 à prova de bala)
+                        val avatarsRaw = backStackEntry.arguments?.getString("avatars")
+                        val avatarUrlsList = if (avatarsRaw != null && avatarsRaw != "null" && avatarsRaw.isNotBlank()) {
+                            try {
+                                val decodedBytes = android.util.Base64.decode(avatarsRaw, android.util.Base64.URL_SAFE)
+                                val decodedString = String(decodedBytes, Charsets.UTF_8)
+                                decodedString.split("|") // Separa as fotos todas de novo
+                            } catch (e: Exception) {
+                                listOf(null) // Proteção para nunca crashar
+                            }
+                        } else {
+                            listOf(null) // Se a app não receber avatares, desenha 1 boneco cinzento
+                        }
+
                         ProjectDetailsScreen(
+                            projectId = id,
                             onBackClick = { navController.popBackStack() },
                             projectTitle = title,
                             projectDesc = desc,
                             deadline = deadline,
-                            avatarUrls = listOf(null, null, null) // Simulamos os avatars iniciais
+                            avatarUrls = avatarUrlsList,
+                            fotosUrlDaBd = fotosUrl
                         )
                     }
                 }
