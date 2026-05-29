@@ -18,13 +18,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.tp_loomo.R
+import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.Project
 import com.example.tp_loomo.viewmodel.AdminViewModel
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.serialization.Serializable
 
 @Composable
 fun ProjectsAdminScreen(
@@ -98,8 +105,6 @@ fun ProjectsAdminScreen(
                 }
             }
         }
-
-
     }
 }
 
@@ -121,8 +126,62 @@ fun FigmaFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
+// Estruturas de dados para ler os membros da BD em segurança
+@Serializable
+data class CardMemberRow(val user_id: String)
+
+@Serializable
+data class CardProfileRow(val avatar_url: String? = null)
+
 @Composable
 fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
+
+    // --- ESTADO PARA GUARDAR AS FOTOS VERDADEIRAS ---
+    var realAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
+
+    // --- VAI À BASE DE DADOS BUSCAR QUEM ESTÁ NO PROJETO ---
+    LaunchedEffect(project.id) {
+        try {
+            val members = supabase.postgrest["project_members"]
+                .select(columns = Columns.list("user_id")) {
+                    filter { eq("project_id", project.id) }
+                }.decodeList<CardMemberRow>()
+
+            val memberIds = members.map { it.user_id }
+
+            if (memberIds.isNotEmpty()) {
+                val profiles = supabase.postgrest["profiles"]
+                    .select(columns = Columns.list("avatar_url")) {
+                        filter { isIn("id", memberIds) }
+                    }.decodeList<CardProfileRow>()
+
+                realAvatars = profiles.map { it.avatar_url }
+            }
+        } catch (e: Exception) {
+            // Em caso de falha de rede, ignora e mostra lista vazia (bonecos cinzentos)
+        }
+    }
+
+    // --- LÓGICA DE CAPAS ---
+    val savedCoverInDb = project.cover_url
+
+    val finalCoverImageUrl: Any = when {
+        savedCoverInDb == null -> {
+            val covers = listOf(
+                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600",
+                "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=600",
+                "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?q=80&w=600",
+                "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=600"
+            )
+            covers[project.id % covers.size]
+        }
+        savedCoverInDb == "fundo_preto" -> R.drawable.fundo_preto
+        savedCoverInDb == "fundo_branco" -> R.drawable.fundo_branco
+        savedCoverInDb == "fundo_azul" -> R.drawable.fundo_azul
+        savedCoverInDb == "fundo_rosa" -> R.drawable.fundo_rosa
+        else -> savedCoverInDb
+    }
+
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -134,19 +193,27 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFFE0C3FC), Color(0xFF8EC5FC)) // Gradiente subtil abstrato (substitui a imagem 3D)
-                        )
-                    )
             ) {
+                AsyncImage(
+                    model = finalCoverImageUrl,
+                    contentDescription = "Capa do Projeto",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))))
+                )
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 12.dp, end = 16.dp)
                 ) {
-                    val mockAvatars = listOf("url1", "url2", "url3", "url4")
-                    ProjectOverlappingAvatars(avatarUrls = mockAvatars)
+                    // --- USA AS FOTOS REAIS AQUI ---
+                    ProjectOverlappingAvatars(avatarUrls = realAvatars)
                 }
             }
 
@@ -213,10 +280,20 @@ fun ProjectOverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
                     .size(32.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
-                    .background(Color(0xFFFFB74D)), // Cor de fundo temporária
+                    .background(Color(0xFFFFB74D)), // Cor de fundo padrão se não houver foto
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                // SE HOUVER UM LINK VÁLIDO, DESENHA A FOTO. SE NÃO, MOSTRA O BONECO BRANCO.
+                if (!url.isNullOrBlank() && url.startsWith("http")) {
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Avatar do membro",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
             }
         }
         if (remaining > 0) {

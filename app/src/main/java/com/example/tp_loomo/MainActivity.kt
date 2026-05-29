@@ -35,23 +35,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             TploomoTheme {
                 val navController = rememberNavController()
-
-                // Estado para controlar a aba ativa no MainAppScreen
                 var currentTab by remember { mutableIntStateOf(0) }
 
                 NavHost(navController = navController, startDestination = "splash") {
 
-                    // SPLASH SCREEN com Lógica de Auto-Login
                     composable("splash") {
                         SplashScreen {
                             val user = supabase.auth.currentUserOrNull()
                             if (user != null) {
-                                // Usuário logado -> Vai para a Home
                                 navController.navigate("main") {
                                     popUpTo("splash") { inclusive = true }
                                 }
                             } else {
-                                // Sem sessão -> Vai para o Onboarding
                                 navController.navigate("onboarding") {
                                     popUpTo("splash") { inclusive = true }
                                 }
@@ -91,7 +86,7 @@ class MainActivity : ComponentActivity() {
                             onTabChange = { currentTab = it },
                             onLogout = {
                                 navController.navigate("login") {
-                                    popUpTo(0) // Limpa o histórico de navegação
+                                    popUpTo(0)
                                 }
                             },
                             onEditProfile = { navController.navigate("editProfile") },
@@ -109,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
-                        route = "projectDetails/{projectId}", // Agora passamos só o ID!
+                        route = "projectDetails/{projectId}",
                         arguments = listOf(navArgument("projectId") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val projectId = backStackEntry.arguments?.getInt("projectId") ?: return@composable

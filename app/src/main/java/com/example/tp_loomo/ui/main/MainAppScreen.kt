@@ -77,10 +77,9 @@ fun MainAppScreen(
                 }
                 1 -> {
                     if (currentRole == "admin") {
-                        // CORREÇÃO AQUI: Adicionado o navController
                         ProjectsAdminScreen(navController = navController)
                     } else {
-                        PlaceholderScreen("Ecrã de Histórico em Construção")
+                        PlaceholderScreen("Ecrã de Projetos em Construção")
                     }
                 }
                 2 -> {

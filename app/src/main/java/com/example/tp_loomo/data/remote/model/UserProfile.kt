@@ -9,5 +9,6 @@ data class UserProfile(
     val full_name: String? = null,
     val avatar_url: String? = null,
     val role: String? = null,
-    val email: String? = null
-)
+    val email: String? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null)

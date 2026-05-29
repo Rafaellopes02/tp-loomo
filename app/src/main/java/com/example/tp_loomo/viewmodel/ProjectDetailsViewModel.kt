@@ -29,6 +29,7 @@ class ProjectDetailsViewModel : ViewModel() {
                 project = repository.getProjectById(projectId)
                 teamMembers = repository.getProjectMembers(projectId)
             } catch (e: Exception) {
+                android.util.Log.e("ERRO_LOOMO", "Falha ao carregar projeto $projectId: ${e.message}", e)
                 project = null
                 teamMembers = emptyList()
             } finally {

@@ -1,5 +1,8 @@
 package com.example.tp_loomo.ui.project
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,12 +28,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.tp_loomo.R
+import com.example.tp_loomo.data.remote.api.supabase // Certifica-te de importar a tua variável supabase corretamente
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.launch
 
 data class MockTask(val title: String, val time: String)
 
@@ -45,6 +54,12 @@ fun ProjectDetailsScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // --- ESTADOS DA CAPA (TUA LÓGICA) ---
+    var showCoverScreen by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var isUploading by remember { mutableStateOf(false) }
+
     // --- ESTADOS DO MODO DE EDIÇÃO ---
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
@@ -57,6 +72,19 @@ fun ProjectDetailsScreen(
     val project = viewModel.project
     val teamMembers = viewModel.teamMembers
     val isLoading = viewModel.isLoading
+
+    // Define a capa atual com base nos dados que o ViewModel carregou do projeto
+    var currentCover by remember(project?.cover_url) {
+        mutableStateOf<Any?>(
+            when (project?.cover_url) {
+                "fundo_preto" -> R.drawable.fundo_preto
+                "fundo_rosa" -> R.drawable.fundo_rosa
+                "fundo_azul" -> R.drawable.fundo_azul
+                "fundo_branco" -> R.drawable.fundo_branco
+                else -> project?.cover_url
+            }
+        )
+    }
 
     val mockTasks = listOf(
         MockTask("Desenvolver Protótipo Figma", "Hoje - 17.00H"),
@@ -92,6 +120,24 @@ fun ProjectDetailsScreen(
                         .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
+
+                    // A TUA LÓGICA DE IMAGEM DE FUNDO
+                    if (currentCover != null) {
+                        AsyncImage(
+                            model = currentCover,
+                            contentDescription = "Capa do Projeto",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    // A TUA CAMADA ESCURA PARA DESTACAR O TEXTO
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.29f))
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 48.dp, start = 16.dp, end = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,7 +165,10 @@ fun ProjectDetailsScreen(
                                 DropdownMenuItem(
                                     text = { Text("Mudar fundo", color = Color.Black, fontWeight = FontWeight.Medium) },
                                     leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
-                                    onClick = { showMenu = false }
+                                    onClick = {
+                                        showMenu = false
+                                        showCoverScreen = true // ABRE O TEU ECRÃ DE CAPA
+                                    }
                                 )
 
                                 DropdownMenuItem(
@@ -254,6 +303,59 @@ fun ProjectDetailsScreen(
             }
         }
 
+        // --- A TUA LÓGICA DE SOBREPOSIÇÃO DO ECRÃ DE UPLOAD ---
+        if (showCoverScreen) {
+            SetCoverScreen(
+                onDismiss = { showCoverScreen = false },
+                onSave = { newImage ->
+                    coroutineScope.launch {
+                        isUploading = true
+                        try {
+                            val finalUrlToSave: String = when {
+                                newImage == R.drawable.fundo_preto -> "fundo_preto"
+                                newImage == R.drawable.fundo_branco -> "fundo_branco"
+                                newImage == R.drawable.fundo_azul -> "fundo_azul"
+                                newImage == R.drawable.fundo_rosa -> "fundo_rosa"
+                                newImage.toString().startsWith("content://") -> {
+                                    val uri = android.net.Uri.parse(newImage.toString())
+                                    val inputStream = context.contentResolver.openInputStream(uri)
+                                    val byteArray = inputStream?.readBytes() ?: throw Exception("Erro a ler foto")
+
+                                    val fileName = "projeto_${projectId}_${System.currentTimeMillis()}.jpg"
+
+                                    val bucket = supabase.storage["covers"]
+                                    bucket.upload(fileName, byteArray)
+                                    bucket.publicUrl(fileName)
+                                }
+                                else -> newImage.toString()
+                            }
+
+                            supabase.postgrest["projects"].update(
+                                {
+                                    set("cover_url", finalUrlToSave)
+                                }
+                            ) {
+                                filter { eq("id", projectId) }
+                            }
+
+                            currentCover = newImage
+                            showCoverScreen = false
+                            Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
+
+                            // Força a ViewModel a recarregar o projeto para manter tudo sincronizado
+                            viewModel.loadProjectDetails(projectId)
+
+                        } catch (e: Exception) {
+                            android.util.Log.e("ERRO_SUPABASE", "Falha ao gravar: ${e.message}", e)
+                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isUploading = false
+                        }
+                    }
+                }
+            )
+        }
+
         // --- MODAL DE CONFIRMAÇÃO DE ELIMINAÇÃO ---
         if (showDeleteDialog) {
             AlertDialog(
@@ -357,5 +459,141 @@ fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+// O TEU COMPONENTE DE ESCOLHA DE CAPA INTACTO
+@Composable
+fun SetCoverScreen(
+    onDismiss: () -> Unit,
+    onSave: (Any) -> Unit
+) {
+    var selectedImage by remember { mutableStateOf<Any?>(null) }
+
+    val systemBackgrounds = listOf(
+        R.drawable.fundo_preto,
+        R.drawable.fundo_rosa,
+        R.drawable.fundo_branco,
+        R.drawable.fundo_azul
+    )
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            selectedImage = uri.toString()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.Gray, modifier = Modifier.size(32.dp))
+            }
+            Text(text = "Set Cover", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+
+            TextButton(
+                onClick = { selectedImage?.let { onSave(it) } },
+                enabled = selectedImage != null
+            ) {
+                Text(
+                    "Save",
+                    color = if (selectedImage != null) Color(0xFF1C61A2) else Color.LightGray,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Escolha uma imagem da sua galeria",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFF9F9F9))
+                    .border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
+                    .clickable { galleryLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (selectedImage != null) {
+                    AsyncImage(
+                        model = selectedImage,
+                        contentDescription = "Preview da Capa",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = "Adicionar Foto",
+                            tint = Color.LightGray,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("+ Adicionar Foto", color = Color.Gray, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Text(
+                text = "Ou escolha um fundo do sistema",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+            ) {
+                systemBackgrounds.forEach { drawableId ->
+                    val isSelected = selectedImage == drawableId
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(
+                                width = if (isSelected) 4.dp else 1.dp,
+                                color = if (isSelected) Color(0xFF1C61A2) else Color(0xFFE0E0E0),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { selectedImage = drawableId }
+                    ) {
+                        AsyncImage(
+                            model = drawableId,
+                            contentDescription = "Fundo do sistema",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
+        }
     }
 }
