@@ -6,7 +6,12 @@ import com.example.tp_loomo.data.remote.model.UserProfile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.Serializable
+
 class ProjectRepository {
+
+    // ESTRUTURA NOVA PARA RESOLVER O ERRO DO JSON
+    @Serializable
+    data class ProjectMemberRow(val project_id: Int, val user_id: String)
 
     suspend fun getManagedProjects(): List<Project> {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return emptyList()
@@ -18,9 +23,10 @@ class ProjectRepository {
     suspend fun getMemberProjects(): List<Project> {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return emptyList()
 
+        // Corrigido: Agora usa o ProjectMemberRow em vez do Map perigoso
         val projectIds = supabase.postgrest["project_members"].select {
             filter { eq("user_id", userId) }
-        }.decodeList<Map<String, Int>>().mapNotNull { it["project_id"] }
+        }.decodeList<ProjectMemberRow>().map { it.project_id }
 
         if (projectIds.isEmpty()) return emptyList()
 
@@ -30,9 +36,10 @@ class ProjectRepository {
     }
 
     suspend fun getProjectMembers(projectId: Int): List<UserProfile> {
+        // Corrigido: Agora usa o ProjectMemberRow em vez do Map perigoso
         val memberIds = supabase.postgrest["project_members"].select {
             filter { eq("project_id", projectId) }
-        }.decodeList<Map<String, String>>().mapNotNull { it["user_id"] }
+        }.decodeList<ProjectMemberRow>().map { it.user_id }
 
         if (memberIds.isEmpty()) return emptyList()
 
@@ -40,6 +47,7 @@ class ProjectRepository {
             filter { isIn("id", memberIds.map { it as Any }) }
         }.decodeList<UserProfile>()
     }
+
     suspend fun getProjectById(projectId: Int): Project? {
         return try {
             supabase.postgrest["projects"].select {
@@ -55,6 +63,7 @@ class ProjectRepository {
             supabase.postgrest["projects"]
                 .select()
                 .decodeList<Project>()
+                .sortedByDescending { it.id }
         } catch (e: Exception) {
             emptyList()
         }

@@ -3,6 +3,7 @@ package com.example.tp_loomo.ui.admin
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +34,9 @@ import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.viewmodel.AdminViewModel
-import com.example.tp_loomo.viewmodel.ProfileViewModel
+import io.github.jan.supabase.gotrue.auth
+import com.example.tp_loomo.data.remote.api.supabase
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,17 +44,29 @@ import java.util.*
 @Composable
 fun DashboardAdminScreen(
     navController: NavController,
-    adminViewModel: AdminViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel()
+    adminViewModel: AdminViewModel = viewModel()
 ) {
+    var avatarUrl by remember { mutableStateOf<String?>(null) }
+    var nome by remember { mutableStateOf("Admin") }
+    val coroutineScope = rememberCoroutineScope()
     var showAddUserModal by remember { mutableStateOf(false) }
     var showAddProjectModal by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        profileViewModel.loadProfile()
-    }
+        coroutineScope.launch {
+            try {
+                val currentUser = supabase.auth.currentUserOrNull()
+                if (currentUser != null) {
+                    avatarUrl = currentUser.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
+                    val fullName = currentUser.userMetadata?.get("full_name")?.toString()?.replace("\"", "")
 
-    val userData = profileViewModel.userData
+                    if (!fullName.isNullOrBlank() && fullName != "null") {
+                        nome = fullName.split(" ").first()
+                    }
+                }
+            } catch (e: Exception) { }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -66,21 +82,21 @@ fun DashboardAdminScreen(
                 modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!userData?.avatarUrl.isNullOrEmpty()) {
+                if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
                     AsyncImage(
-                        model = userData?.avatarUrl,
-                        contentDescription = null,
+                        model = avatarUrl,
+                        contentDescription = "Avatar",
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray)
+                    Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
-                    text = "${stringResource(id = R.string.hello)} ${userData?.nomeCompleto?.split(" ")?.first() ?: "Admin"}",
+                    text = "${stringResource(id = R.string.hello)} $nome",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
@@ -91,21 +107,21 @@ fun DashboardAdminScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Estatísticas
+        // Grelha de Estatísticas
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminStatCard(stringResource(id = R.string.totalProjects), "18", Color(0xFF9EBAE1), Color(0xFF1C61A2), Modifier.weight(1f))
-                AdminStatCard(stringResource(id = R.string.users), "3", Color(0xFFC4AED6), Color(0xFF6A1B9A), Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.totalProjects), value = "18", bgColor = Color(0xFF9EBAE1), titleColor = Color(0xFF1C61A2), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.users), value = "3", bgColor = Color(0xFFC4AED6), titleColor = Color(0xFF6A1B9A), modifier = Modifier.weight(1f))
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminStatCard(stringResource(id = R.string.activeTasks), "8", Color(0xFFF3E19C), Color(0xFFF57F17), Modifier.weight(1f))
-                AdminStatCard(stringResource(id = R.string.completedProjects), "2", Color(0xFF90D992), Color(0xFF2E7D32), Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.activeTasks), value = "8", bgColor = Color(0xFFF3E19C), titleColor = Color(0xFFF57F17), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.completedProjects), value = "2", bgColor = Color(0xFF90D992), titleColor = Color(0xFF2E7D32), modifier = Modifier.weight(1f))
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(stringResource(R.string.quickActions), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.quickActions), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         Spacer(modifier = Modifier.height(16.dp))
 
         AdminActionCard(
@@ -114,7 +130,6 @@ fun DashboardAdminScreen(
             subtitle = stringResource(id = R.string.clickToCreateNewProject),
             onClick = { showAddProjectModal = true }
         )
-
         Spacer(modifier = Modifier.height(12.dp))
 
         AdminActionCard(
@@ -125,32 +140,25 @@ fun DashboardAdminScreen(
         )
 
         Spacer(modifier = Modifier.height(12.dp))
-
-        AdminActionCard(
-            icon = Icons.Outlined.TrendingUp,
-            title = stringResource(id = R.string.exportStatistics),
-            subtitle = stringResource(id = R.string.exportReports),
-            onClick = { /* Ação futura */ }
-        )
+        AdminActionCard(icon = Icons.Outlined.TrendingUp, title = stringResource(id = R.string.exportStatistics), subtitle = stringResource(id = R.string.exportReports))
 
         Spacer(modifier = Modifier.height(80.dp))
     }
 
     if (showAddUserModal) {
-        AddUserBottomSheet(
-            onDismiss = { showAddUserModal = false },
-            viewModel = adminViewModel // Adiciona esta linha!
-        )
+        AddUserBottomSheet(onDismiss = { showAddUserModal = false }, viewModel = adminViewModel)
     }
 
     if (showAddProjectModal) {
         AddProjectBottomSheet(
             onDismiss = { showAddProjectModal = false },
             navController = navController,
-            viewModel = adminViewModel // CORRIGIDO: Argumento nomeado
+            viewModel = adminViewModel
         )
     }
 }
+
+enum class SelectionType { MANAGER, TEAM }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,6 +168,8 @@ fun AddProjectBottomSheet(
     viewModel: AdminViewModel
 ) {
     val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var deadline by remember { mutableStateOf<Calendar?>(null) }
@@ -168,170 +178,11 @@ fun AddProjectBottomSheet(
     val selectedUsers = remember { mutableStateListOf<UserProfile>() }
     var selectionType by remember { mutableStateOf<SelectionType?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
-        Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp).verticalScroll(rememberScrollState())) {
-            Text(stringResource(id = R.string.createNewProject), fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            AddUserTextField(stringResource(id = R.string.projectTitle), title) { title = it }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Project Manager",
-                    fontSize = 16.sp // Garante que ambos estão nomeados
-                )
-                Button(onClick = { selectionType = SelectionType.MANAGER }) {
-                    Text(text = "Add")
-                }
-            }
-            selectedManager?.let { Text("Manager: ${it.full_name}", color = Color(0xFF1C61A2), fontWeight = FontWeight.Bold) }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Team Members",
-                    fontSize = 16.sp
-                )
-                Button(onClick = { selectionType = SelectionType.TEAM }) {
-                    Text(text = "Add")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    if (title.isBlank() || selectedManager == null) {
-                        Toast.makeText(context, "Preencha o título e o manager", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    viewModel.handleCreateProject(
-                        name = title,
-                        desc = description,
-                        managerId = selectedManager!!.id,
-                        startDate = sdf.format(Date()),
-                        endDate = deadline?.let { sdf.format(it.time) },
-                        teamIds = selectedUsers.map { it.id },
-                        onSuccess = { t, d, dead ->
-                            onDismiss()
-                            navController.navigate("projectDetails/${t.replace(" ","_")}/${d.replace(" ","_")}/$dead")
-                        },
-                        onError = { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = !viewModel.isLoading
-            ) {
-                if (viewModel.isLoading) CircularProgressIndicator(color = Color.White)
-                else Text(stringResource(id = R.string.create))
-            }
-        }
-    }
-
-    if (selectionType != null) {
-        UserSelectionDialog(
-            type = selectionType!!,
-            viewModel = viewModel,
-            onDismiss = { selectionType = null },
-            onUserSelected = { user ->
-                if (selectionType == SelectionType.MANAGER) selectedManager = user
-                else if (!selectedUsers.contains(user)) selectedUsers.add(user)
-                selectionType = null
-            }
-        )
-    }
-}
-
-@Composable
-fun UserSelectionDialog(type: SelectionType, viewModel: AdminViewModel, onDismiss: () -> Unit, onUserSelected: (UserProfile) -> Unit) {
-    LaunchedEffect(Unit) {
-        viewModel.loadUsersForSelection(type == SelectionType.MANAGER)
-    }
-
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
-        title = { Text("Selecionar") },
-        text = {
-            if (viewModel.isLoading) CircularProgressIndicator()
-            else {
-                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                    items(viewModel.usersList) { user ->
-                        Text(
-                            text = user.full_name ?: "Sem Nome",
-                            modifier = Modifier.fillMaxWidth().clickable { onUserSelected(user) }.padding(16.dp)
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
-
-@Composable
-fun AdminStatCard(title: String, value: String, bgColor: Color, titleColor: Color, modifier: Modifier = Modifier) {
-    Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = bgColor), modifier = modifier.height(100.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Text(title, fontSize = 12.sp, color = titleColor)
-            Text(value, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = titleColor)
-        }
-    }
-}
-
-@Composable
-fun AdminActionCard(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(4.dp)
+        sheetState = sheetState,
+        containerColor = Color.White
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = Color(0xFF1C61A2), modifier = Modifier.size(32.dp))
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(title, fontWeight = FontWeight.Bold)
-                Text(subtitle, fontSize = 12.sp, color = Color.Gray)
-            }
-        }
-    }
-}
-
-@Composable
-fun AddUserTextField(label: String, value: String, onValueChange: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(label, fontSize = 14.sp)
-        TextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(focusedContainerColor = Color(0xFFF3F3F3))
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
-    val context = LocalContext.current
-    var fullName by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("user") }
-
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
         Column(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
@@ -339,16 +190,384 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(stringResource(id = R.string.createNewUser), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.createNewProject), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             Spacer(modifier = Modifier.height(24.dp))
 
-            AddUserTextField(stringResource(id = R.string.full_name), fullName) { fullName = it }
+            AddUserTextField(label = stringResource(id = R.string.projectTitle), value = title, onValueChange = { title = it })
             Spacer(modifier = Modifier.height(16.dp))
 
-            AddUserTextField(stringResource(id = R.string.username), username) { username = it }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(text = stringResource(id = R.string.description), fontSize = 14.sp, color = Color(0xFF4A4A4A))
+                Spacer(modifier = Modifier.height(6.dp))
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF3F3F3),
+                        unfocusedContainerColor = Color(0xFFF3F3F3),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Prazo Limite
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Prazo-Limite", fontSize = 16.sp, color = Color.Gray)
+                    deadline?.let {
+                        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        Text(text = sdf.format(it.time), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
+                    }
+                }
+                Button(
+                    onClick = {
+                        val calendar = Calendar.getInstance()
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, dayOfMonth ->
+                                val selected = Calendar.getInstance()
+                                selected.set(year, month, dayOfMonth)
+                                deadline = selected
+                            },
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        ).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            AddUserTextField(stringResource(id = R.string.email), email) { email = it }
+            // Gestor do Projeto
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Gestor do Projeto", fontSize = 16.sp, color = Color(0xFF4A4A4A))
+                }
+                Button(
+                    onClick = { selectionType = SelectionType.MANAGER },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            // Avatar do Gestor
+            if (selectedManager != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 36.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = selectedManager?.avatar_url,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.LightGray).clickable {
+                            selectedManager = null
+                        },
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(selectedManager?.full_name ?: "Sem Nome", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(" - Gestor", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Membros da Equipa
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Group, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Membros da Equipa", fontSize = 16.sp, color = Color(0xFF4A4A4A))
+                }
+                Button(
+                    onClick = { selectionType = SelectionType.TEAM },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            // --- LÓGICA DE AVATARES EMPILHADOS ---
+            if (selectedUsers.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp, start = 36.dp),
+                    horizontalArrangement = Arrangement.spacedBy((-12).dp) // O truque da sobreposição!
+                ) {
+                    selectedUsers.forEach { user ->
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color.White, CircleShape) // Borda branca para separar as imagens
+                                .background(Color.LightGray)
+                                .clickable { selectedUsers.remove(user) }, // Continua a dar para remover se clicares neles aqui
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!user.avatar_url.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = user.avatar_url,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Botão Criar
+            Button(
+                onClick = {
+                    if (title.isBlank() || selectedManager == null) {
+                        Toast.makeText(context, "Preencha o título e selecione um Gestor", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val startDate = sdf.format(Date())
+                    val endDate = deadline?.let { sdf.format(it.time) }
+
+                    viewModel.handleCreateProject(
+                        name = title.trim(),
+                        desc = description.trim(),
+                        managerId = selectedManager!!.id,
+                        startDate = startDate,
+                        endDate = endDate,
+                        teamIds = selectedUsers.map { it.id },
+                        onSuccess = { safeTitle, safeDesc, dateForScreen ->
+                            Toast.makeText(context, "Projeto criado com sucesso!", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                            navController.navigate("projectDetails/$safeTitle/$safeDesc/$dateForScreen")
+                        },
+                        onError = { Toast.makeText(context, "Erro: $it", Toast.LENGTH_LONG).show() }
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !viewModel.isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2))
+            ) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(stringResource(id = R.string.create), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    // --- NOVA LÓGICA DE ABRIR O DIALOG ---
+    if (selectionType != null) {
+        UserSelectionDialog(
+            type = selectionType!!,
+            viewModel = viewModel,
+            // Enviamos a lista de quem já está selecionado para pintar de azul
+            selectedIds = if (selectionType == SelectionType.MANAGER) listOfNotNull(selectedManager?.id) else selectedUsers.map { it.id },
+            onDismiss = { selectionType = null },
+            onUserSelected = { user ->
+                if (selectionType == SelectionType.MANAGER) {
+                    // Clica no mesmo -> Remove. Clica noutro -> Substitui
+                    selectedManager = if (selectedManager?.id == user.id) null else user
+                    selectionType = null // Fecha logo porque só pode haver um gestor
+                } else {
+                    // Lógica Team: Clica no mesmo -> Remove. Clica num novo -> Adiciona.
+                    val existingUser = selectedUsers.find { it.id == user.id }
+                    if (existingUser != null) {
+                        selectedUsers.remove(existingUser)
+                    } else {
+                        selectedUsers.add(user)
+                    }
+                    // NOTA: Não mudamos o selectionType = null aqui! A janela não se fecha para poderes adicionar vários seguidos.
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun UserSelectionDialog(
+    type: SelectionType,
+    viewModel: AdminViewModel,
+    selectedIds: List<String>,
+    onDismiss: () -> Unit,
+    onUserSelected: (UserProfile) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(type) {
+        viewModel.loadUsersForSelection(type == SelectionType.MANAGER)
+    }
+
+    val filteredUsers = viewModel.usersList.filter {
+        val nameMatch = it.full_name?.contains(searchQuery, ignoreCase = true) == true
+        val userMatch = it.username?.contains(searchQuery, ignoreCase = true) == true
+        nameMatch || userMatch
+    }
+
+    val modalTitle = if (type == SelectionType.MANAGER) "Selecionar Gestor" else "Selecionar Membro"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        title = { Text(modalTitle, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Pesquisar...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = Color(0xFF1C61A2))
+                } else if (filteredUsers.isEmpty()) {
+                    Text("Nenhum utilizador encontrado.", fontSize = 14.sp, color = Color.Gray)
+                } else {
+                    LazyColumn {
+                        items(filteredUsers) { user ->
+                            val isSelected = selectedIds.contains(user.id)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) Color(0xFFE3F2FD) else Color.Transparent) // Pinta de azul claro se já foi selecionado
+                                    .clickable { onUserSelected(user) }
+                                    .padding(vertical = 8.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = user.avatar_url,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(user.full_name ?: "Sem nome", fontWeight = FontWeight.Bold, color = Color.Black)
+                                    Text("@${user.username ?: "user"}", fontSize = 12.sp, color = Color.Gray)
+                                }
+                                // Mostra o "certo" na lista
+                                if (isSelected) {
+                                    Icon(Icons.Default.Check, contentDescription = "Selecionado", tint = Color(0xFF1C61A2))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+fun AdminActionCard(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit = {}) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = icon, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(32.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = subtitle, fontSize = 12.sp, color = Color.Gray)
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminStatCard(title: String, value: String, bgColor: Color, titleColor: Color, modifier: Modifier = Modifier) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = modifier.height(100.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxSize(), verticalArrangement = Arrangement.Center) {
+            Text(text = title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = titleColor)
+            Text(text = value, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = titleColor)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var fullName by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("user") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(stringResource(id = R.string.createNewUser), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            AddUserTextField(label = stringResource(id = R.string.full_name), value = fullName, onValueChange = { fullName = it })
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AddUserTextField(label = stringResource(id = R.string.username), value = username, onValueChange = { username = it })
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AddUserTextField(label = stringResource(id = R.string.email), value = email, onValueChange = { email = it })
             Spacer(modifier = Modifier.height(16.dp))
 
             RoleDropdown(selectedRole = role, onRoleSelected = { role = it })
@@ -367,13 +586,14 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
                         username = username,
                         role = role,
                         onSuccess = {
-                            Toast.makeText(context, "Utilizador criado com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.userCreated), Toast.LENGTH_SHORT).show()
                             onDismiss()
                         },
                         onError = { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                     )
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
                 enabled = !viewModel.isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2))
             ) {
@@ -383,8 +603,30 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
                     Text(stringResource(id = R.string.create), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+@Composable
+fun AddUserTextField(label: String, value: String, onValueChange: (String) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(text = label, fontSize = 14.sp, color = Color(0xFF4A4A4A))
+        Spacer(modifier = Modifier.height(6.dp))
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color(0xFFF3F3F3),
+                unfocusedContainerColor = Color(0xFFF3F3F3),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            singleLine = true
+        )
     }
 }
 
@@ -392,28 +634,44 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
 @Composable
 fun RoleDropdown(selectedRole: String, onRoleSelected: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val roles = listOf("user" to "Utilizador", "project_manager" to "Gestor", "admin" to "Administrador")
+    val roles = listOf(
+        "user" to stringResource(id = R.string.normalUser),
+        "project_manager" to stringResource(id = R.string.manager),
+        "admin" to stringResource(id = R.string.admin)
+    )
+
     val displayRole = roles.find { it.first == selectedRole }?.second ?: "Selecione..."
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Tipo de Utilizador", fontSize = 14.sp)
+        Text(stringResource(id = R.string.userType), fontSize = 14.sp, color = Color(0xFF4A4A4A))
         Spacer(modifier = Modifier.height(6.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
+        ) {
             TextField(
                 value = displayRole,
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color(0xFFF3F3F3),
-                    unfocusedContainerColor = Color(0xFFF3F3F3)
+                    unfocusedContainerColor = Color(0xFFF3F3F3),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
                 roles.forEach { (roleValue, roleLabel) ->
                     DropdownMenuItem(
-                        text = { Text(roleLabel) },
+                        text = { Text(roleLabel, color = Color.Black) },
                         onClick = {
                             onRoleSelected(roleValue)
                             expanded = false
@@ -424,5 +682,3 @@ fun RoleDropdown(selectedRole: String, onRoleSelected: (String) -> Unit) {
         }
     }
 }
-
-enum class SelectionType { MANAGER, TEAM }
