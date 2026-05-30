@@ -130,24 +130,49 @@ fun FigmaFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 @Serializable
 data class CardMemberRow(val user_id: String)
 
+// Atualiza a estrutura para ler também o nome!
 @Serializable
-data class CardProfileRow(val avatar_url: String? = null)
+data class CardProfileRow(val full_name: String? = null, val avatar_url: String? = null)
 
 @Composable
 fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
 
-    // --- ESTADO PARA GUARDAR AS FOTOS VERDADEIRAS ---
-    var realAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
+    // --- ESTADOS 100% DINÂMICOS ---
+    var managerName by remember { mutableStateOf("A carregar...") }
+    var projectAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
 
-    // --- VAI À BASE DE DADOS BUSCAR QUEM ESTÁ NO PROJETO ---
+    // --- DETETIVE (Vai buscar o Gestor E a Equipa) ---
     LaunchedEffect(project.id) {
+        managerName = "A carregar..."
+        projectAvatars = emptyList()
+
         try {
+            // 1. Descobrir o Gestor
+            var tempManagerAvatar: String? = null
+            if (project.project_manager_id != null) {
+                val managerProfile = supabase.postgrest["profiles"]
+                    .select(columns = Columns.list("full_name", "avatar_url")) {
+                        filter { eq("id", project.project_manager_id) }
+                    }.decodeSingleOrNull<CardProfileRow>()
+
+                if (managerProfile != null) {
+                    managerName = managerProfile.full_name ?: "Sem Nome"
+                    tempManagerAvatar = managerProfile.avatar_url
+                } else {
+                    managerName = "Desconhecido"
+                }
+            } else {
+                managerName = "Sem Gestor"
+            }
+
+            // 2. Descobrir a Equipa
             val members = supabase.postgrest["project_members"]
                 .select(columns = Columns.list("user_id")) {
                     filter { eq("project_id", project.id) }
                 }.decodeList<CardMemberRow>()
 
             val memberIds = members.map { it.user_id }
+            var teamAvatars: List<String?> = emptyList()
 
             if (memberIds.isNotEmpty()) {
                 val profiles = supabase.postgrest["profiles"]
@@ -155,10 +180,20 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                         filter { isIn("id", memberIds) }
                     }.decodeList<CardProfileRow>()
 
-                realAvatars = profiles.map { it.avatar_url }
+                teamAvatars = profiles.map { it.avatar_url }
             }
+
+            // 3. Juntar tudo (Gestor em primeiro lugar, seguido da equipa)
+            val combined = mutableListOf<String?>()
+            combined.add(tempManagerAvatar) // Adiciona o gestor (mesmo que não tenha foto, adiciona null para desenhar o boneco default)
+            combined.addAll(teamAvatars)
+
+            // O "distinct()" remove fotos repetidas caso o gestor também esteja na tabela da equipa por engano
+            projectAvatars = combined.distinct()
+
         } catch (e: Exception) {
-            // Em caso de falha de rede, ignora e mostra lista vazia (bonecos cinzentos)
+            managerName = "Erro"
+            projectAvatars = listOf(null) // Mostra um boneco de erro
         }
     }
 
@@ -212,8 +247,8 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 12.dp, end = 16.dp)
                 ) {
-                    // --- USA AS FOTOS REAIS AQUI ---
-                    ProjectOverlappingAvatars(avatarUrls = realAvatars)
+                    // --- PASSA A LISTA COMPLETA E DINÂMICA ---
+                    ProjectOverlappingAvatars(avatarUrls = projectAvatars)
                 }
             }
 
@@ -235,11 +270,13 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(2.dp))
 
+                // --- AGORA O NOME É DINÂMICO ---
                 Text(
-                    text = "Gestor: Tiago Melo",
+                    text = "Gestor: $managerName",
                     fontSize = 13.sp,
                     color = Color.Gray,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -267,7 +304,6 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
         }
     }
 }
-
 @Composable
 fun ProjectOverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
     val visibleAvatars = avatarUrls.take(maxAvatars)

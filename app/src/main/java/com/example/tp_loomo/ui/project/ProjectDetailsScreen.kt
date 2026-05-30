@@ -35,9 +35,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
-import com.example.tp_loomo.data.remote.api.supabase // Certifica-te de importar a tua variável supabase corretamente
+import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.ui.admin.CardProfileRow
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 
@@ -54,26 +56,58 @@ fun ProjectDetailsScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // --- ESTADOS DA CAPA (TUA LÓGICA) ---
     var showCoverScreen by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var isUploading by remember { mutableStateOf(false) }
 
-    // --- ESTADOS DO MODO DE EDIÇÃO ---
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
+
+    // --- ESTADOS DINÂMICOS PARA O GESTOR ---
+    var realManagerName by remember { mutableStateOf("A carregar...") }
+    var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(projectId) {
         viewModel.loadProjectDetails(projectId)
     }
 
     val project = viewModel.project
-    val teamMembers = viewModel.teamMembers
+    val teamMembers = viewModel.teamMembers // Isto vai carregar aos poucos!
     val isLoading = viewModel.isLoading
 
-    // Define a capa atual com base nos dados que o ViewModel carregou do projeto
+    // --- DETETIVE DO GESTOR (Trata apenas do Gestor) ---
+    LaunchedEffect(project?.project_manager_id) {
+        if (project?.project_manager_id != null) {
+            try {
+                val managerProfile = supabase.postgrest["profiles"]
+                    .select(columns = Columns.list("full_name", "avatar_url")) {
+                        filter { eq("id", project.project_manager_id) }
+                    }.decodeSingleOrNull<CardProfileRow>()
+
+                if (managerProfile != null) {
+                    realManagerName = managerProfile.full_name ?: "Sem Nome"
+                    realManagerAvatar = managerProfile.avatar_url
+                } else {
+                    realManagerName = "Desconhecido"
+                }
+            } catch (e: Exception) {
+                realManagerName = "Erro"
+            }
+        } else {
+            realManagerName = "Sem Gestor"
+        }
+    }
+
+    // --- UNIÃO REATIVA (Se a equipa carregar 1 segundo depois, junta automaticamente!) ---
+    val projectAvatars = remember(realManagerAvatar, teamMembers) {
+        val combinedList = mutableListOf<String?>()
+        combinedList.add(realManagerAvatar)
+        combinedList.addAll(teamMembers.map { it.avatar_url })
+        combinedList.distinct() // Remove repetidos
+    }
+
     var currentCover by remember(project?.cover_url) {
         mutableStateOf<Any?>(
             when (project?.cover_url) {
@@ -111,7 +145,6 @@ fun ProjectDetailsScreen(
             modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // --- CABEÇALHO ---
             item {
                 Box(
                     modifier = Modifier
@@ -121,7 +154,6 @@ fun ProjectDetailsScreen(
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
 
-                    // A TUA LÓGICA DE IMAGEM DE FUNDO
                     if (currentCover != null) {
                         AsyncImage(
                             model = currentCover,
@@ -131,7 +163,6 @@ fun ProjectDetailsScreen(
                         )
                     }
 
-                    // A TUA CAMADA ESCURA PARA DESTACAR O TEXTO
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -167,7 +198,7 @@ fun ProjectDetailsScreen(
                                     leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
                                     onClick = {
                                         showMenu = false
-                                        showCoverScreen = true // ABRE O TEU ECRÃ DE CAPA
+                                        showCoverScreen = true
                                     }
                                 )
 
@@ -205,7 +236,8 @@ fun ProjectDetailsScreen(
                     }
 
                     Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)) {
-                        OverlappingAvatars(avatarUrls = teamMembers.map { it.avatar_url })
+                        // Passamos a lista combinada e reativa
+                        OverlappingAvatars(avatarUrls = projectAvatars)
                     }
                 }
             }
@@ -255,6 +287,15 @@ fun ProjectDetailsScreen(
                         Text(text = project.description ?: "Sem descrição.", fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
                     }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Gestor: $realManagerName",
+                        fontSize = 15.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Bold
+                    )
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Row(
@@ -284,7 +325,6 @@ fun ProjectDetailsScreen(
                 }
             }
 
-            // --- TABS (FILTROS) ---
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -297,13 +337,11 @@ fun ProjectDetailsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // --- LISTA DE TAREFAS ---
             items(mockTasks) { task ->
                 TaskItemCard(title = task.title, time = task.time)
             }
         }
 
-        // --- A TUA LÓGICA DE SOBREPOSIÇÃO DO ECRÃ DE UPLOAD ---
         if (showCoverScreen) {
             SetCoverScreen(
                 onDismiss = { showCoverScreen = false },
@@ -342,7 +380,6 @@ fun ProjectDetailsScreen(
                             showCoverScreen = false
                             Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
 
-                            // Força a ViewModel a recarregar o projeto para manter tudo sincronizado
                             viewModel.loadProjectDetails(projectId)
 
                         } catch (e: Exception) {
@@ -356,7 +393,6 @@ fun ProjectDetailsScreen(
             )
         }
 
-        // --- MODAL DE CONFIRMAÇÃO DE ELIMINAÇÃO ---
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
@@ -462,7 +498,6 @@ fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-// O TEU COMPONENTE DE ESCOLHA DE CAPA INTACTO
 @Composable
 fun SetCoverScreen(
     onDismiss: () -> Unit,
