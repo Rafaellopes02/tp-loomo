@@ -73,4 +73,14 @@
     <string name="projectCreated">Project Created Successfully!</string>
     <string name="projectDeadline">Deadline</string>
     <string name="add">Add</string>
+    <string name="create_task_dialog_title">Create Task</string>
+    <string name="task_title_label">Title</string>
+    <string name="task_description_optional">Description (optional)</string>
+    <string name="task_due_date_label">Due Date YYYY-MM-DD (optional)</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="task_created_success">Task created successfully!</string>
+    <string name="task_created_error">Error creating task.</string>
+    <string name="no_tasks">No tasks.</string>
+    <string name="no_due_date">No deadline</string>
+    <string name="mark_task_completed">Mark as completed</string>
 </resources>

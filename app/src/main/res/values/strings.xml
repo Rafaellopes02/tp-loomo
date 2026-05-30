@@ -75,4 +75,14 @@
     <string name="projectCreated">Projeto Criado com Sucesso!</string>
     <string name="projectDeadline">Prazo-Limite</string>
     <string name="add">Adicionar</string>
+    <string name="create_task_dialog_title">Criar Tarefa</string>
+    <string name="task_title_label">Título</string>
+    <string name="task_description_optional">Descrição (opcional)</string>
+    <string name="task_due_date_label">Prazo AAAA-MM-DD (opcional)</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="task_created_success">Tarefa criada com sucesso!</string>
+    <string name="task_created_error">Erro ao criar a tarefa.</string>
+    <string name="no_tasks">Sem tarefas.</string>
+    <string name="no_due_date">Sem prazo</string>
+    <string name="mark_task_completed">Marcar como concluída</string>
 </resources>

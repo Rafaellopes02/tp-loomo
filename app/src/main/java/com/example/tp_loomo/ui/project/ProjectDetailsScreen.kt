@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -29,32 +31,44 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
-import com.example.tp_loomo.data.remote.api.supabase // Certifica-te de importar a tua variável supabase corretamente
+import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.data.remote.model.Task
+import com.example.tp_loomo.ui.theme.DeadlinePillBackground
+import com.example.tp_loomo.ui.theme.LoomoBlue
+import com.example.tp_loomo.ui.theme.TaskCompletedGreen
+import com.example.tp_loomo.ui.theme.TaskIconBackground
+import com.example.tp_loomo.viewmodel.MainViewModel
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
+import com.example.tp_loomo.viewmodel.TasksViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
-
-data class MockTask(val title: String, val time: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectDetailsScreen(
     projectId: Int,
     onBackClick: () -> Unit,
-    viewModel: ProjectDetailsViewModel = viewModel()
+    viewModel: ProjectDetailsViewModel = viewModel(),
+    tasksViewModel: TasksViewModel = viewModel(),
+    mainViewModel: MainViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Todas") }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showCreateTaskDialog by remember { mutableStateOf(false) }
+    var newTaskTitle by remember { mutableStateOf("") }
+    var newTaskDescription by remember { mutableStateOf("") }
+    var newTaskDueDate by remember { mutableStateOf("") }
 
-    // --- ESTADOS DA CAPA (TUA LÓGICA) ---
+    // --- ESTADOS DA CAPA ---
     var showCoverScreen by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -65,15 +79,23 @@ fun ProjectDetailsScreen(
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        mainViewModel.fetchUserRole()
+    }
+
     LaunchedEffect(projectId) {
         viewModel.loadProjectDetails(projectId)
+    }
+
+    LaunchedEffect(projectId) {
+        tasksViewModel.loadProjectTasks(projectId)
     }
 
     val project = viewModel.project
     val teamMembers = viewModel.teamMembers
     val isLoading = viewModel.isLoading
+    val currentRole = mainViewModel.currentRole
 
-    // Define a capa atual com base nos dados que o ViewModel carregou do projeto
     var currentCover by remember(project?.cover_url) {
         mutableStateOf<Any?>(
             when (project?.cover_url) {
@@ -85,12 +107,6 @@ fun ProjectDetailsScreen(
             }
         )
     }
-
-    val mockTasks = listOf(
-        MockTask("Desenvolver Protótipo Figma", "Hoje - 17.00H"),
-        MockTask("Cumprir Requisitos Funcionais", "Amanhã - 19.30H"),
-        MockTask("Modelo de Dados", "17 Mai 2026 - 10.00H")
-    )
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
@@ -104,6 +120,13 @@ fun ProjectDetailsScreen(
             Text("Projeto não encontrado", color = Color.Gray)
         }
         return
+    }
+
+    // RF12 — Filtrar tarefas conforme o tab selecionado
+    val filteredTasks = when (selectedTab) {
+        "Andamento" -> tasksViewModel.tasks.filter { it.status == "pending" || it.status == "in_progress" }
+        "Concluído" -> tasksViewModel.tasks.filter { it.status == "completed" }
+        else -> tasksViewModel.tasks
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -120,8 +143,6 @@ fun ProjectDetailsScreen(
                         .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
-
-                    // A TUA LÓGICA DE IMAGEM DE FUNDO
                     if (currentCover != null) {
                         AsyncImage(
                             model = currentCover,
@@ -131,7 +152,6 @@ fun ProjectDetailsScreen(
                         )
                     }
 
-                    // A TUA CAMADA ESCURA PARA DESTACAR O TEXTO
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -167,7 +187,7 @@ fun ProjectDetailsScreen(
                                     leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
                                     onClick = {
                                         showMenu = false
-                                        showCoverScreen = true // ABRE O TEU ECRÃ DE CAPA
+                                        showCoverScreen = true
                                     }
                                 )
 
@@ -204,6 +224,26 @@ fun ProjectDetailsScreen(
                         }
                     }
 
+                    // Bubble avatar do projeto (centro-baixo do header)
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 20.dp)
+                            .size(68.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color.White, CircleShape)
+                            .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8)))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = project.name.take(1).uppercase(),
+                            color = Color.White,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+
+                    // TODO RF11: substituir por fetch real de perfis dos membros (avatarUrls ainda podem ser null)
                     Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)) {
                         OverlappingAvatars(avatarUrls = teamMembers.map { it.avatar_url })
                     }
@@ -250,7 +290,7 @@ fun ProjectDetailsScreen(
                             }
                         }
                     } else {
-                        Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        Text(text = project.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = project.description ?: "Sem descrição.", fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
                     }
@@ -263,7 +303,7 @@ fun ProjectDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(DeadlinePillBackground).padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
                                 text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}",
@@ -278,8 +318,8 @@ fun ProjectDetailsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
-                        Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
+                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFE0E0E0))) {
+                        Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(LoomoBlue))
                     }
                 }
             }
@@ -297,13 +337,52 @@ fun ProjectDetailsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // --- LISTA DE TAREFAS ---
-            items(mockTasks) { task ->
-                TaskItemCard(title = task.title, time = task.time)
+            // --- LISTA DE TAREFAS (RF12) ---
+            if (filteredTasks.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_tasks),
+                            color = Color.Gray,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            } else {
+                items(filteredTasks) { task ->
+                    TaskItemCard(
+                        task = task,
+                        onMarkCompleted = {
+                            val taskId = task.id
+                            if (taskId != null) {
+                                tasksViewModel.markTaskAsCompleted(taskId, projectId)
+                            }
+                        }
+                    )
+                }
             }
         }
 
-        // --- A TUA LÓGICA DE SOBREPOSIÇÃO DO ECRÃ DE UPLOAD ---
+        // --- FAB — RF10 Criar Tarefa (só project_manager / manager) ---
+        val role = mainViewModel.currentRole
+        if (!showCoverScreen && (role == "manager" || role == "project_manager")) {
+            FloatingActionButton(
+                onClick = { showCreateTaskDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp),
+                containerColor = Color(0xFF1C61A2),
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_task_dialog_title))
+            }
+        }
+
+        // --- ECRÃ DE UPLOAD DE CAPA ---
         if (showCoverScreen) {
             SetCoverScreen(
                 onDismiss = { showCoverScreen = false },
@@ -320,9 +399,7 @@ fun ProjectDetailsScreen(
                                     val uri = android.net.Uri.parse(newImage.toString())
                                     val inputStream = context.contentResolver.openInputStream(uri)
                                     val byteArray = inputStream?.readBytes() ?: throw Exception("Erro a ler foto")
-
                                     val fileName = "projeto_${projectId}_${System.currentTimeMillis()}.jpg"
-
                                     val bucket = supabase.storage["covers"]
                                     bucket.upload(fileName, byteArray)
                                     bucket.publicUrl(fileName)
@@ -331,9 +408,7 @@ fun ProjectDetailsScreen(
                             }
 
                             supabase.postgrest["projects"].update(
-                                {
-                                    set("cover_url", finalUrlToSave)
-                                }
+                                { set("cover_url", finalUrlToSave) }
                             ) {
                                 filter { eq("id", projectId) }
                             }
@@ -341,8 +416,6 @@ fun ProjectDetailsScreen(
                             currentCover = newImage
                             showCoverScreen = false
                             Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
-
-                            // Força a ViewModel a recarregar o projeto para manter tudo sincronizado
                             viewModel.loadProjectDetails(projectId)
 
                         } catch (e: Exception) {
@@ -366,9 +439,7 @@ fun ProjectDetailsScreen(
                     Button(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         shape = RoundedCornerShape(12.dp),
-                        onClick = {
-                            showDeleteDialog = false
-                        }
+                        onClick = { showDeleteDialog = false }
                     ) {
                         Text("Sim", color = Color.White, fontWeight = FontWeight.Bold)
                     }
@@ -382,34 +453,146 @@ fun ProjectDetailsScreen(
                 containerColor = Color.White
             )
         }
+
+        // --- MODAL DE CRIAR TAREFA (RF10) ---
+        if (showCreateTaskDialog) {
+            AlertDialog(
+                onDismissRequest = { showCreateTaskDialog = false },
+                title = {
+                    Text(
+                        text = stringResource(R.string.create_task_dialog_title),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
+                },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = newTaskTitle,
+                            onValueChange = { newTaskTitle = it },
+                            label = { Text(stringResource(R.string.task_title_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = newTaskDescription,
+                            onValueChange = { newTaskDescription = it },
+                            label = { Text(stringResource(R.string.task_description_optional)) },
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = newTaskDueDate,
+                            onValueChange = { newTaskDueDate = it },
+                            label = { Text(stringResource(R.string.task_due_date_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (newTaskTitle.isBlank()) return@Button
+                            tasksViewModel.createTask(
+                                projectId = projectId,
+                                title = newTaskTitle.trim(),
+                                description = newTaskDescription.trim().ifBlank { null },
+                                dueDate = newTaskDueDate.trim().ifBlank { null }
+                            ) { success ->
+                                if (success) {
+                                    showCreateTaskDialog = false
+                                    newTaskTitle = ""
+                                    newTaskDescription = ""
+                                    newTaskDueDate = ""
+                                    Toast.makeText(context, context.getString(R.string.task_created_success), Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, context.getString(R.string.task_created_error), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.create), color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCreateTaskDialog = false }) {
+                        Text(stringResource(R.string.btn_cancel), color = Color.Gray, fontWeight = FontWeight.Medium)
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
+            )
+        }
     }
 }
 
+// RF19 — Card de tarefa real com botão de concluir
 @Composable
-fun TaskItemCard(title: String, time: String) {
+fun TaskItemCard(task: Task, onMarkCompleted: () -> Unit) {
+    val isCompleted = task.status == "completed"
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .padding(horizontal = 24.dp, vertical = 6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.FormatListBulleted,
-                contentDescription = null,
-                tint = Color(0xFF1C61A2),
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = time, fontSize = 13.sp, color = Color.Gray)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(TaskIconBackground),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FormatListBulleted,
+                    contentDescription = null,
+                    tint = LoomoBlue,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = task.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = task.due_date ?: stringResource(R.string.no_due_date),
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+            IconButton(
+                onClick = { if (!isCompleted) onMarkCompleted() },
+                enabled = !isCompleted
+            ) {
+                if (isCompleted) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = stringResource(R.string.mark_task_completed),
+                        tint = TaskCompletedGreen,
+                        modifier = Modifier.size(28.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.CheckCircle,
+                        contentDescription = stringResource(R.string.mark_task_completed),
+                        tint = Color.Gray,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     }
@@ -462,7 +645,6 @@ fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-// O TEU COMPONENTE DE ESCOLHA DE CAPA INTACTO
 @Composable
 fun SetCoverScreen(
     onDismiss: () -> Unit,

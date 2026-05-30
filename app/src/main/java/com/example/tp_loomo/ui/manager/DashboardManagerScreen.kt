@@ -21,12 +21,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.tp_loomo.viewmodel.ManagerViewModel
 import com.example.tp_loomo.viewmodel.ProfileViewModel
 
 @Composable
 fun DashboardManagerScreen(
+    navController: NavController,
     managerViewModel: ManagerViewModel = viewModel(),
     profileViewModel: ProfileViewModel = viewModel()
 ) {
@@ -114,7 +116,10 @@ fun DashboardManagerScreen(
                     pending = 0,
                     completed = 0,
                     progress = 0.0f,
-                    bgColors = palette[index % palette.size]
+                    bgColors = palette[index % palette.size],
+                    onClick = {
+                        project.id?.let { id -> navController.navigate("projectDetails/$id") }
+                    }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -140,8 +145,9 @@ fun StatCard(title: String, value: String, bgColor: Color, modifier: Modifier = 
 }
 
 @Composable
-fun ManagerProjectCard(title: String, pending: Int, completed: Int, progress: Float, bgColors: List<Color>) {
+fun ManagerProjectCard(title: String, pending: Int, completed: Int, progress: Float, bgColors: List<Color>, onClick: () -> Unit = {}) {
     Card(
+        onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),

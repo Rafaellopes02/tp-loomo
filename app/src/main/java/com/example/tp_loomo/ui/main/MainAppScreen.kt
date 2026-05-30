@@ -68,7 +68,7 @@ fun MainAppScreen(
                 0 -> {
                     when (currentRole) {
                         "admin" -> DashboardAdminScreen(navController = navController)
-                        "project_manager" -> DashboardManagerScreen()
+                        "manager", "project_manager" -> DashboardManagerScreen(navController = navController)
                         "loading" -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = Color(0xFF1C61A2))
                         }
