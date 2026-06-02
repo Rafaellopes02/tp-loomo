@@ -2,6 +2,7 @@ package com.example.tp_loomo.data.repository
 
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.Project
+import com.example.tp_loomo.data.remote.model.Task
 import com.example.tp_loomo.data.remote.model.UserProfile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -9,7 +10,6 @@ import kotlinx.serialization.Serializable
 
 class ProjectRepository {
 
-    // ESTRUTURA NOVA PARA RESOLVER O ERRO DO JSON
     @Serializable
     data class ProjectMemberRow(val project_id: Int, val user_id: String)
 
@@ -23,7 +23,6 @@ class ProjectRepository {
     suspend fun getMemberProjects(): List<Project> {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return emptyList()
 
-        // Corrigido: Agora usa o ProjectMemberRow em vez do Map perigoso
         val projectIds = supabase.postgrest["project_members"].select {
             filter { eq("user_id", userId) }
         }.decodeList<ProjectMemberRow>().map { it.project_id }
@@ -36,7 +35,6 @@ class ProjectRepository {
     }
 
     suspend fun getProjectMembers(projectId: Int): List<UserProfile> {
-        // Corrigido: Agora usa o ProjectMemberRow em vez do Map perigoso
         val memberIds = supabase.postgrest["project_members"].select {
             filter { eq("project_id", projectId) }
         }.decodeList<ProjectMemberRow>().map { it.user_id }
@@ -93,6 +91,43 @@ class ProjectRepository {
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    suspend fun getProjectTasks(projectId: Int): List<Task> {
+        return try {
+            supabase.postgrest["tasks"].select {
+                filter { eq("project_id", projectId) }
+            }.decodeList<Task>()
+        } catch (e: Exception) {
+            android.util.Log.e("REPO_ERRO", "Erro a carregar tarefas: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getTaskById(taskId: Int): Task? {
+        return try {
+            supabase.postgrest["tasks"].select {
+                filter { eq("id", taskId) }
+            }.decodeSingleOrNull<Task>()
+        } catch (e: Exception) {
+            android.util.Log.e("REPO_ERRO", "Erro a carregar tarefa: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun getAllRegularUsers(): List<UserProfile> {
+        return try {
+            supabase.postgrest["profiles"].select {
+                filter {
+                    // Assume que a tua coluna se chama "role" e o valor é "user"
+                    // (Se na tua base de dados a coluna se chamar, por exemplo, "tipo", altera aqui!)
+                    eq("role", "user")
+                }
+            }.decodeList<UserProfile>()
+        } catch (e: Exception) {
+            android.util.Log.e("REPO_ERRO", "Erro a carregar utilizadores: ${e.message}")
+            emptyList()
         }
     }
 }

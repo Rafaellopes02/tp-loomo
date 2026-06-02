@@ -23,6 +23,7 @@ import com.example.tp_loomo.ui.main.MainAppScreen
 import com.example.tp_loomo.ui.profile.ChangePasswordScreen
 import com.example.tp_loomo.ui.profile.EditProfileScreen
 import com.example.tp_loomo.ui.project.ProjectDetailsScreen
+import com.example.tp_loomo.ui.project.TaskDetailsScreen // <-- Import adicionado
 import com.example.tp_loomo.ui.theme.TploomoTheme
 import com.example.tp_loomo.data.remote.api.supabase
 import io.github.jan.supabase.gotrue.auth
@@ -103,6 +104,7 @@ class MainActivity : ComponentActivity() {
                         ChangePasswordScreen(onBack = { navController.popBackStack() })
                     }
 
+                    // --- ROTA DO PROJETO (Atualizada com o clique na tarefa) ---
                     composable(
                         route = "projectDetails/{projectId}",
                         arguments = listOf(navArgument("projectId") { type = NavType.IntType })
@@ -111,6 +113,23 @@ class MainActivity : ComponentActivity() {
 
                         ProjectDetailsScreen(
                             projectId = projectId,
+                            onBackClick = { navController.popBackStack() },
+                            onTaskClick = { taskId ->
+                                // O comando para abrir a página da tarefa
+                                navController.navigate("taskDetails/$taskId")
+                            }
+                        )
+                    }
+
+                    // --- NOVA ROTA DOS DETALHES DA TAREFA ---
+                    composable(
+                        route = "taskDetails/{taskId}",
+                        arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+                        TaskDetailsScreen(
+                            taskId = taskId,
                             onBackClick = { navController.popBackStack() }
                         )
                     }

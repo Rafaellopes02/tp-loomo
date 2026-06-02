@@ -13,12 +13,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,27 +39,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.ui.admin.CardProfileRow
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
-
-data class MockTask(val title: String, val time: String)
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectDetailsScreen(
     projectId: Int,
     onBackClick: () -> Unit,
+    onTaskClick: (taskId: Int) -> Unit = {},
     viewModel: ProjectDetailsViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Todas") }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
+    var showCreateTaskModal by remember { mutableStateOf(false) }
     var showCoverScreen by remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var isUploading by remember { mutableStateOf(false) }
@@ -65,7 +72,6 @@ fun ProjectDetailsScreen(
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
 
-    // --- ESTADOS DINÂMICOS PARA O GESTOR ---
     var realManagerName by remember { mutableStateOf("A carregar...") }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
@@ -74,10 +80,11 @@ fun ProjectDetailsScreen(
     }
 
     val project = viewModel.project
-    val teamMembers = viewModel.teamMembers // Isto vai carregar aos poucos!
+    val teamMembers = viewModel.teamMembers
+    val projectTasks = viewModel.projectTasks
     val isLoading = viewModel.isLoading
+    val allUsers = viewModel.allUsers
 
-    // --- DETETIVE DO GESTOR (Trata apenas do Gestor) ---
     LaunchedEffect(project?.project_manager_id) {
         if (project?.project_manager_id != null) {
             try {
@@ -100,12 +107,11 @@ fun ProjectDetailsScreen(
         }
     }
 
-    // --- UNIÃO REATIVA (Se a equipa carregar 1 segundo depois, junta automaticamente!) ---
     val projectAvatars = remember(realManagerAvatar, teamMembers) {
         val combinedList = mutableListOf<String?>()
         combinedList.add(realManagerAvatar)
         combinedList.addAll(teamMembers.map { it.avatar_url })
-        combinedList.distinct() // Remove repetidos
+        combinedList.distinct()
     }
 
     var currentCover by remember(project?.cover_url) {
@@ -119,12 +125,6 @@ fun ProjectDetailsScreen(
             }
         )
     }
-
-    val mockTasks = listOf(
-        MockTask("Desenvolver Protótipo Figma", "Hoje - 17.00H"),
-        MockTask("Cumprir Requisitos Funcionais", "Amanhã - 19.30H"),
-        MockTask("Modelo de Dados", "17 Mai 2026 - 10.00H")
-    )
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
@@ -153,7 +153,6 @@ fun ProjectDetailsScreen(
                         .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
-
                     if (currentCover != null) {
                         AsyncImage(
                             model = currentCover,
@@ -163,11 +162,7 @@ fun ProjectDetailsScreen(
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.29f))
-                    )
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.29f)))
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 48.dp, start = 16.dp, end = 16.dp),
@@ -216,14 +211,6 @@ fun ProjectDetailsScreen(
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
 
                                 DropdownMenuItem(
-                                    text = { Text("Concluído", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold) },
-                                    leadingIcon = { Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32)) },
-                                    onClick = { showMenu = false }
-                                )
-
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
-
-                                DropdownMenuItem(
                                     text = { Text("Eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
                                     leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "Eliminar", tint = Color(0xFFD32F2F)) },
                                     onClick = {
@@ -236,7 +223,6 @@ fun ProjectDetailsScreen(
                     }
 
                     Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)) {
-                        // Passamos a lista combinada e reativa
                         OverlappingAvatars(avatarUrls = projectAvatars)
                     }
                 }
@@ -244,42 +230,18 @@ fun ProjectDetailsScreen(
 
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
-
                     if (isEditing) {
-                        OutlinedTextField(
-                            value = editName,
-                            onValueChange = { editName = it },
-                            label = { Text("Nome do Projeto") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true
-                        )
+                        OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Nome do Projeto") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
                         Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = editDescription,
-                            onValueChange = { editDescription = it },
-                            label = { Text("Descrição") },
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        )
+                        OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(12.dp))
                         Spacer(modifier = Modifier.height(16.dp))
-
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = { isEditing = false }) {
-                                Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Bold)
-                            }
+                            TextButton(onClick = { isEditing = false }) { Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Bold) }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
-                                onClick = {
-                                    viewModel.updateProject(projectId, editName, editDescription) {
-                                        isEditing = false
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
-                            }
+                                onClick = { viewModel.updateProject(projectId, editName, editDescription) { isEditing = false } },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)), shape = RoundedCornerShape(12.dp)
+                            ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
                         }
                     } else {
                         Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
@@ -288,37 +250,16 @@ fun ProjectDetailsScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Gestor: $realManagerName",
-                        fontSize = 15.sp,
-                        color = Color.DarkGray,
-                        fontWeight = FontWeight.Bold
-                    )
-
+                    Text(text = "Gestor: $realManagerName", fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}",
-                                color = Color(0xFFD32F2F),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                            Text(text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-
                         Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
                         Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
                     }
@@ -326,10 +267,7 @@ fun ProjectDetailsScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     CustomFilterChip("Todas", selectedTab == "Todas") { selectedTab = "Todas" }
                     CustomFilterChip("Andamento", selectedTab == "Andamento") { selectedTab = "Andamento" }
                     CustomFilterChip("Concluído", selectedTab == "Concluído") { selectedTab = "Concluído" }
@@ -337,11 +275,53 @@ fun ProjectDetailsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            items(mockTasks) { task ->
-                TaskItemCard(title = task.title, time = task.time)
+            if (projectTasks.isEmpty()) {
+                item {
+                    Text(
+                        text = "Sem tarefas para apresentar.",
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else {
+                items(projectTasks) { task ->
+                    TaskItemCard(
+                        title = task.title,
+                        time = task.due_date ?: "Sem data",
+                        onClick = {
+                            task.id?.let { onTaskClick(it) } // <-- ENVIA O CLIQUE AQUI
+                        }
+                    )
+                }
             }
         }
 
+        // --- BOTÃO + (CRIAR TAREFA) ---
+        FloatingActionButton(
+            onClick = { showCreateTaskModal = true },
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
+            containerColor = Color(0xFF1C61A2),
+            contentColor = Color.White,
+            shape = CircleShape
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Nova Tarefa", modifier = Modifier.size(32.dp))
+        }
+
+        // --- MODAL DA TAREFA ---
+        if (showCreateTaskModal) {
+            CreateTaskBottomSheet(
+                teamMembers = allUsers,
+                onDismiss = { showCreateTaskModal = false },
+                onSave = { titulo, desc, dueDate, membrosSelecionadosIds -> // <-- AGORA É UMA LISTA
+                    viewModel.createTask(projectId, titulo, desc, dueDate, membrosSelecionadosIds) {
+                        showCreateTaskModal = false
+                    }
+                }
+            )
+        }
+
+        // --- MODAL DO FUNDO ---
         if (showCoverScreen) {
             SetCoverScreen(
                 onDismiss = { showCoverScreen = false },
@@ -369,21 +349,14 @@ fun ProjectDetailsScreen(
                             }
 
                             supabase.postgrest["projects"].update(
-                                {
-                                    set("cover_url", finalUrlToSave)
-                                }
-                            ) {
-                                filter { eq("id", projectId) }
-                            }
+                                { set("cover_url", finalUrlToSave) }
+                            ) { filter { eq("id", projectId) } }
 
                             currentCover = newImage
                             showCoverScreen = false
                             Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
-
                             viewModel.loadProjectDetails(projectId)
-
                         } catch (e: Exception) {
-                            android.util.Log.e("ERRO_SUPABASE", "Falha ao gravar: ${e.message}", e)
                             Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
                         } finally {
                             isUploading = false
@@ -397,22 +370,16 @@ fun ProjectDetailsScreen(
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(text = "Eliminar Projeto", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
-                text = { Text(text = "Pretende mesmo eliminar este projeto? Esta ação é permanente e não poderá ser revertida.", fontSize = 15.sp, color = Color.DarkGray) },
+                text = { Text(text = "Pretende mesmo eliminar este projeto?", fontSize = 15.sp, color = Color.DarkGray) },
                 confirmButton = {
                     Button(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         shape = RoundedCornerShape(12.dp),
-                        onClick = {
-                            showDeleteDialog = false
-                        }
-                    ) {
-                        Text("Sim", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        onClick = { showDeleteDialog = false }
+                    ) { Text("Sim", color = Color.White, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Medium)
-                    }
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar", color = Color.Gray) }
                 },
                 shape = RoundedCornerShape(24.dp),
                 containerColor = Color.White
@@ -422,7 +389,7 @@ fun ProjectDetailsScreen(
 }
 
 @Composable
-fun TaskItemCard(title: String, time: String) {
+fun TaskItemCard(title: String, time: String, onClick: () -> Unit = {}) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -430,17 +397,10 @@ fun TaskItemCard(title: String, time: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
+            .clickable { onClick() } // <-- O CLIQUE ESTÁ ATIVO AQUI!
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.FormatListBulleted,
-                contentDescription = null,
-                tint = Color(0xFF1C61A2),
-                modifier = Modifier.size(28.dp)
-            )
+        Row(modifier = Modifier.padding(20.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.FormatListBulleted, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
@@ -448,6 +408,153 @@ fun TaskItemCard(title: String, time: String) {
                 Text(text = time, fontSize = 13.sp, color = Color.Gray)
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateTaskBottomSheet(
+    teamMembers: List<UserProfile>,
+    onDismiss: () -> Unit,
+    onSave: (name: String, description: String, dueDate: String?, selectedMemberIds: List<String>) -> Unit // <-- MUDANÇA AQUI
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+
+    var expandedMenu by remember { mutableStateOf(false) }
+
+    // AGORA É UM 'SET' PARA GUARDAR VÁRIOS UTILIZADORES SEM REPETIR
+    var selectedMembers by remember { mutableStateOf(setOf<UserProfile>()) }
+
+    val uiDateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Text(text = "Criar nova tarefa", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Titulo da tarefa") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(12.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- DATA ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Prazo-Limite", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                }
+                Button(
+                    onClick = { showDatePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
+                    shape = RoundedCornerShape(20.dp), modifier = Modifier.height(36.dp)
+                ) { Text(if (selectedDateMillis == null) "Adicionar" else "Alterar", color = Color.White, fontSize = 13.sp) }
+            }
+            if (selectedDateMillis != null) {
+                Text(text = uiDateFormat.format(Date(selectedDateMillis!!)), color = Color(0xFF1C61A2), fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- EQUIPA MULTI-SELEÇÃO ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.People, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Equipa", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                }
+                Box {
+                    Button(
+                        onClick = { expandedMenu = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
+                        shape = RoundedCornerShape(20.dp), modifier = Modifier.height(36.dp)
+                    ) { Text(if (selectedMembers.isEmpty()) "Adicionar" else "Alterar", color = Color.White, fontSize = 13.sp) }
+
+                    DropdownMenu(expanded = expandedMenu, onDismissRequest = { expandedMenu = false }) {
+                        if (teamMembers.isEmpty()) {
+                            DropdownMenuItem(text = { Text("Sem membros no projeto") }, onClick = { expandedMenu = false })
+                        } else {
+                            teamMembers.forEach { member ->
+                                val isSelected = selectedMembers.contains(member)
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = isSelected,
+                                                onCheckedChange = null,
+                                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF1C61A2))
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(member.full_name ?: member.username ?: "Utilizador")
+                                        }
+                                    },
+                                    onClick = {
+                                        // Adiciona ou remove da lista ao clicar
+                                        selectedMembers = if (isSelected) {
+                                            selectedMembers - member
+                                        } else {
+                                            selectedMembers + member
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- MOSTRAR AVATARES COMO NO MOCKUP ---
+            if (selectedMembers.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.padding(start = 32.dp, top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Aproveitamos a função OverlappingAvatars que já existe no teu ficheiro!
+                    OverlappingAvatars(avatarUrls = selectedMembers.map { it.avatar_url }.toList())
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "- ${selectedMembers.size} Membros",
+                        color = Color(0xFF1C61A2),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Button(
+                onClick = {
+                    val dbDate = selectedDateMillis?.let { dbDateFormat.format(Date(it)) }
+                    // Passa a lista de IDs para o ViewModel
+                    onSave(title, description, dbDate, selectedMembers.map { it.id }.toList())
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
+                shape = RoundedCornerShape(16.dp)
+            ) { Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+            Spacer(modifier = Modifier.height(48.dp))
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = { TextButton(onClick = { selectedDateMillis = datePickerState.selectedDateMillis; showDatePicker = false }) { Text("OK") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
+        ) { DatePicker(state = datePickerState) }
     }
 }
 
@@ -473,9 +580,7 @@ fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
             Box(
                 modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.DarkGray),
                 contentAlignment = Alignment.Center
-            ) {
-                Text("+$remaining", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
+            ) { Text("+$remaining", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -489,12 +594,7 @@ fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
-        Text(
-            text = text,
-            color = if (isSelected) Color.White else Color.Gray,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Text(text = text, color = if (isSelected) Color.White else Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -504,128 +604,37 @@ fun SetCoverScreen(
     onSave: (Any) -> Unit
 ) {
     var selectedImage by remember { mutableStateOf<Any?>(null) }
+    val systemBackgrounds = listOf(R.drawable.fundo_preto, R.drawable.fundo_rosa, R.drawable.fundo_branco, R.drawable.fundo_azul)
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) selectedImage = uri.toString() }
 
-    val systemBackgrounds = listOf(
-        R.drawable.fundo_preto,
-        R.drawable.fundo_rosa,
-        R.drawable.fundo_branco,
-        R.drawable.fundo_azul
-    )
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            selectedImage = uri.toString()
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.Gray, modifier = Modifier.size(32.dp))
-            }
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.Gray, modifier = Modifier.size(32.dp)) }
             Text(text = "Set Cover", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
-
-            TextButton(
-                onClick = { selectedImage?.let { onSave(it) } },
-                enabled = selectedImage != null
-            ) {
-                Text(
-                    "Save",
-                    color = if (selectedImage != null) Color(0xFF1C61A2) else Color.LightGray,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            TextButton(onClick = { selectedImage?.let { onSave(it) } }, enabled = selectedImage != null) { Text("Save", color = if (selectedImage != null) Color(0xFF1C61A2) else Color.LightGray, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Escolha uma imagem da sua galeria",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "Escolha uma imagem da sua galeria", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFFF9F9F9))
-                    .border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
-                    .clickable { galleryLauncher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF9F9F9)).border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp)).clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (selectedImage != null) {
-                    AsyncImage(
-                        model = selectedImage,
-                        contentDescription = "Preview da Capa",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Outlined.Image,
-                            contentDescription = "Adicionar Foto",
-                            tint = Color.LightGray,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("+ Adicionar Foto", color = Color.Gray, fontWeight = FontWeight.Bold)
-                    }
+                if (selectedImage != null) AsyncImage(model = selectedImage, contentDescription = "Preview da Capa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(imageVector = Icons.Outlined.Image, contentDescription = "Adicionar Foto", tint = Color.LightGray, modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("+ Adicionar Foto", color = Color.Gray, fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
-
-            Text(
-                text = "Ou escolha um fundo do sistema",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-            ) {
+            Text(text = "Ou escolha um fundo do sistema", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
                 systemBackgrounds.forEach { drawableId ->
                     val isSelected = selectedImage == drawableId
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(
-                                width = if (isSelected) 4.dp else 1.dp,
-                                color = if (isSelected) Color(0xFF1C61A2) else Color(0xFFE0E0E0),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable { selectedImage = drawableId }
-                    ) {
-                        AsyncImage(
-                            model = drawableId,
-                            contentDescription = "Fundo do sistema",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                    Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).border(width = if (isSelected) 4.dp else 1.dp, color = if (isSelected) Color(0xFF1C61A2) else Color(0xFFE0E0E0), shape = RoundedCornerShape(12.dp)).clickable { selectedImage = drawableId }) {
+                        AsyncImage(model = drawableId, contentDescription = "Fundo do sistema", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
                 }
             }
