@@ -154,12 +154,7 @@ fun ProjectDetailsScreen(
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
                     if (currentCover != null) {
-                        AsyncImage(
-                            model = currentCover,
-                            contentDescription = "Capa do Projeto",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                        AsyncImage(model = currentCover, contentDescription = "Capa do Projeto", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
 
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.29f)))
@@ -178,11 +173,11 @@ fun ProjectDetailsScreen(
                             Text(text = "Veja detalhes do projeto", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
 
+                        // AGORA É SEMPRE VISÍVEL
                         Box {
                             IconButton(onClick = { showMenu = true }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.White, modifier = Modifier.size(32.dp))
                             }
-
                             DropdownMenu(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false },
@@ -191,32 +186,18 @@ fun ProjectDetailsScreen(
                                 DropdownMenuItem(
                                     text = { Text("Mudar fundo", color = Color.Black, fontWeight = FontWeight.Medium) },
                                     leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
-                                    onClick = {
-                                        showMenu = false
-                                        showCoverScreen = true
-                                    }
+                                    onClick = { showMenu = false; showCoverScreen = true }
                                 )
-
                                 DropdownMenuItem(
                                     text = { Text("Editar", color = Color.Black, fontWeight = FontWeight.Medium) },
                                     leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color.Black) },
-                                    onClick = {
-                                        showMenu = false
-                                        editName = project.name
-                                        editDescription = project.description ?: ""
-                                        isEditing = true
-                                    }
+                                    onClick = { showMenu = false; editName = project.name; editDescription = project.description ?: ""; isEditing = true }
                                 )
-
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
-
                                 DropdownMenuItem(
                                     text = { Text("Eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
                                     leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "Eliminar", tint = Color(0xFFD32F2F)) },
-                                    onClick = {
-                                        showMenu = false
-                                        showDeleteDialog = true
-                                    }
+                                    onClick = { showMenu = false; showDeleteDialog = true }
                                 )
                             }
                         }
@@ -277,27 +258,20 @@ fun ProjectDetailsScreen(
 
             if (projectTasks.isEmpty()) {
                 item {
-                    Text(
-                        text = "Sem tarefas para apresentar.",
-                        color = Color.Gray,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Text("Sem tarefas para apresentar.", color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             } else {
                 items(projectTasks) { task ->
                     TaskItemCard(
                         title = task.title,
                         time = task.due_date ?: "Sem data",
-                        onClick = {
-                            task.id?.let { onTaskClick(it) } // <-- ENVIA O CLIQUE AQUI
-                        }
+                        onClick = { task.id?.let { onTaskClick(it) } }
                     )
                 }
             }
         }
 
-        // --- BOTÃO + (CRIAR TAREFA) ---
+        // AGORA É SEMPRE VISÍVEL
         FloatingActionButton(
             onClick = { showCreateTaskModal = true },
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
@@ -308,12 +282,11 @@ fun ProjectDetailsScreen(
             Icon(Icons.Default.Add, contentDescription = "Nova Tarefa", modifier = Modifier.size(32.dp))
         }
 
-        // --- MODAL DA TAREFA ---
         if (showCreateTaskModal) {
             CreateTaskBottomSheet(
                 teamMembers = allUsers,
                 onDismiss = { showCreateTaskModal = false },
-                onSave = { titulo, desc, dueDate, membrosSelecionadosIds -> // <-- AGORA É UMA LISTA
+                onSave = { titulo, desc, dueDate, membrosSelecionadosIds ->
                     viewModel.createTask(projectId, titulo, desc, dueDate, membrosSelecionadosIds) {
                         showCreateTaskModal = false
                     }
@@ -321,7 +294,6 @@ fun ProjectDetailsScreen(
             )
         }
 
-        // --- MODAL DO FUNDO ---
         if (showCoverScreen) {
             SetCoverScreen(
                 onDismiss = { showCoverScreen = false },
@@ -338,20 +310,14 @@ fun ProjectDetailsScreen(
                                     val uri = android.net.Uri.parse(newImage.toString())
                                     val inputStream = context.contentResolver.openInputStream(uri)
                                     val byteArray = inputStream?.readBytes() ?: throw Exception("Erro a ler foto")
-
                                     val fileName = "projeto_${projectId}_${System.currentTimeMillis()}.jpg"
-
                                     val bucket = supabase.storage["covers"]
                                     bucket.upload(fileName, byteArray)
                                     bucket.publicUrl(fileName)
                                 }
                                 else -> newImage.toString()
                             }
-
-                            supabase.postgrest["projects"].update(
-                                { set("cover_url", finalUrlToSave) }
-                            ) { filter { eq("id", projectId) } }
-
+                            supabase.postgrest["projects"].update({ set("cover_url", finalUrlToSave) }) { filter { eq("id", projectId) } }
                             currentCover = newImage
                             showCoverScreen = false
                             Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
@@ -372,11 +338,7 @@ fun ProjectDetailsScreen(
                 title = { Text(text = "Eliminar Projeto", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
                 text = { Text(text = "Pretende mesmo eliminar este projeto?", fontSize = 15.sp, color = Color.DarkGray) },
                 confirmButton = {
-                    Button(
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                        shape = RoundedCornerShape(12.dp),
-                        onClick = { showDeleteDialog = false }
-                    ) { Text("Sim", color = Color.White, fontWeight = FontWeight.Bold) }
+                    Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), shape = RoundedCornerShape(12.dp), onClick = { showDeleteDialog = false }) { Text("Sim", color = Color.White, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar", color = Color.Gray) }
@@ -397,7 +359,7 @@ fun TaskItemCard(title: String, time: String, onClick: () -> Unit = {}) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clickable { onClick() } // <-- O CLIQUE ESTÁ ATIVO AQUI!
+            .clickable { onClick() }
     ) {
         Row(modifier = Modifier.padding(20.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.FormatListBulleted, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(28.dp))
@@ -416,7 +378,7 @@ fun TaskItemCard(title: String, time: String, onClick: () -> Unit = {}) {
 fun CreateTaskBottomSheet(
     teamMembers: List<UserProfile>,
     onDismiss: () -> Unit,
-    onSave: (name: String, description: String, dueDate: String?, selectedMemberIds: List<String>) -> Unit // <-- MUDANÇA AQUI
+    onSave: (name: String, description: String, dueDate: String?, selectedMemberIds: List<String>) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var title by remember { mutableStateOf("") }
@@ -427,7 +389,6 @@ fun CreateTaskBottomSheet(
 
     var expandedMenu by remember { mutableStateOf(false) }
 
-    // AGORA É UM 'SET' PARA GUARDAR VÁRIOS UTILIZADORES SEM REPETIR
     var selectedMembers by remember { mutableStateOf(setOf<UserProfile>()) }
 
     val uiDateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -498,7 +459,6 @@ fun CreateTaskBottomSheet(
                                         }
                                     },
                                     onClick = {
-                                        // Adiciona ou remove da lista ao clicar
                                         selectedMembers = if (isSelected) {
                                             selectedMembers - member
                                         } else {
@@ -518,7 +478,6 @@ fun CreateTaskBottomSheet(
                     modifier = Modifier.padding(start = 32.dp, top = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Aproveitamos a função OverlappingAvatars que já existe no teu ficheiro!
                     OverlappingAvatars(avatarUrls = selectedMembers.map { it.avatar_url }.toList())
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -537,7 +496,6 @@ fun CreateTaskBottomSheet(
             Button(
                 onClick = {
                     val dbDate = selectedDateMillis?.let { dbDateFormat.format(Date(it)) }
-                    // Passa a lista de IDs para o ViewModel
                     onSave(title, description, dbDate, selectedMembers.map { it.id }.toList())
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

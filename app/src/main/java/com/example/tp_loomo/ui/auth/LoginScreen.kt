@@ -41,7 +41,8 @@ fun LoginScreen(
     val iconColor = Color(0xFF9E9E9E)
 
     // AQUI ESTÁ A MAGIA! Colocámos os valores iniciais dentro do mutableStateOf
-    var emailOrUsername by remember { mutableStateOf("rafael.lopes@ipvc.pt") }
+    // var emailOrUsername by remember { mutableStateOf("rafael.lopes@ipvc.pt") }
+    var emailOrUsername by remember { mutableStateOf("user@user.com") }
     var senha by remember { mutableStateOf("123456789") }
 
     var passwordVisible by remember { mutableStateOf(false) }

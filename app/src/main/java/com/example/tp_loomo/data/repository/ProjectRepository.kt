@@ -1,17 +1,25 @@
 package com.example.tp_loomo.data.repository
 
+import android.util.Log
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.Project
 import com.example.tp_loomo.data.remote.model.Task
 import com.example.tp_loomo.data.remote.model.UserProfile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
 
 class ProjectRepository {
 
     @Serializable
     data class ProjectMemberRow(val project_id: Int, val user_id: String)
+
+    @Serializable
+    data class TaskAssignmentRow(val task_id: Int, val user_id: String)
+
+    @Serializable
+    data class ProjectUpdate(val name: String, val description: String?)
 
     suspend fun getManagedProjects(): List<Project> {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return emptyList()
@@ -80,9 +88,6 @@ class ProjectRepository {
         }
     }
 
-    @Serializable
-    data class ProjectUpdate(val name: String, val description: String?)
-
     suspend fun updateProject(id: Int, name: String, description: String?): Boolean {
         return try {
             supabase.postgrest["projects"].update(ProjectUpdate(name, description)) {
@@ -100,7 +105,7 @@ class ProjectRepository {
                 filter { eq("project_id", projectId) }
             }.decodeList<Task>()
         } catch (e: Exception) {
-            android.util.Log.e("REPO_ERRO", "Erro a carregar tarefas: ${e.message}")
+            Log.e("REPO_ERRO", "Erro a carregar tarefas: ${e.message}")
             emptyList()
         }
     }
@@ -111,7 +116,7 @@ class ProjectRepository {
                 filter { eq("id", taskId) }
             }.decodeSingleOrNull<Task>()
         } catch (e: Exception) {
-            android.util.Log.e("REPO_ERRO", "Erro a carregar tarefa: ${e.message}")
+            Log.e("REPO_ERRO", "Erro a carregar tarefa: ${e.message}")
             null
         }
     }
@@ -121,12 +126,86 @@ class ProjectRepository {
             supabase.postgrest["profiles"].select {
                 filter {
                     // Assume que a tua coluna se chama "role" e o valor é "user"
-                    // (Se na tua base de dados a coluna se chamar, por exemplo, "tipo", altera aqui!)
                     eq("role", "user")
                 }
             }.decodeList<UserProfile>()
         } catch (e: Exception) {
-            android.util.Log.e("REPO_ERRO", "Erro a carregar utilizadores: ${e.message}")
+            Log.e("REPO_ERRO", "Erro a carregar utilizadores: ${e.message}")
+            emptyList()
+        }
+    }
+    suspend fun getUserTasks(userId: String): List<Task> {
+        return try {
+            Log.d("ProjectRepository", "🔍 A procurar tarefas para o user: $userId")
+
+            // 1. Vai buscar APENAS as colunas task_id e user_id
+            val assignments = supabase.postgrest["task_assignments"].select(
+                columns = Columns.list("task_id", "user_id")
+            ) {
+                filter {
+                    eq("user_id", userId)
+                }
+            }.decodeList<TaskAssignmentRow>()
+
+            Log.d("ProjectRepository", "✅ Atribuições encontradas: ${assignments.size}")
+
+            // Se ele não tiver tarefas atribuídas, devolvemos logo uma lista vazia
+            if (assignments.isEmpty()) {
+                return emptyList()
+            }
+
+            // 2. Extrai apenas os IDs das tarefas (ex: [17, 18, 20])
+            val taskIds = assignments.map { it.task_id }
+            Log.d("ProjectRepository", "📌 IDs das tarefas dele: $taskIds")
+
+            // 3. Vai à tabela 'tasks' buscar apenas as tarefas que têm estes IDs
+            val tasks = supabase.postgrest["tasks"].select {
+                filter {
+                    isIn("id", taskIds.map { it as Any }) // O 'as Any' previne erros de tipagem do Supabase!
+                }
+            }.decodeList<Task>()
+
+            Log.d("ProjectRepository", "🚀 Tarefas finais descarregadas: ${tasks.size}")
+            tasks
+
+        } catch (e: Exception) {
+            Log.e("ProjectRepository", "❌ ERRO GRAVE ao carregar tarefas: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    suspend fun isUserAssignedToTask(taskId: Int, userId: String): Boolean {
+        return try {
+            val assignments = supabase.postgrest["task_assignments"].select(
+                columns = Columns.list("task_id", "user_id")
+            ) {
+                filter {
+                    eq("task_id", taskId)
+                    eq("user_id", userId)
+                }
+            }.decodeList<TaskAssignmentRow>()
+
+            assignments.isNotEmpty() // Devolve 'true' se encontrar pelo menos um registo
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun getTaskAssignees(taskId: Int): List<UserProfile> {
+        return try {
+            val assignments = supabase.postgrest["task_assignments"].select(
+                columns = Columns.list("user_id")
+            ) {
+                filter { eq("task_id", taskId) }
+            }.decodeList<TaskAssignmentRow>()
+
+            if (assignments.isEmpty()) return emptyList()
+
+            val userIds = assignments.map { it.user_id }
+            supabase.postgrest["profiles"].select {
+                filter { isIn("id", userIds.map { it as Any }) }
+            }.decodeList<UserProfile>()
+        } catch (e: Exception) {
             emptyList()
         }
     }

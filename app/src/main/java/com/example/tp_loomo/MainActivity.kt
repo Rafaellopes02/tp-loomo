@@ -23,9 +23,11 @@ import com.example.tp_loomo.ui.main.MainAppScreen
 import com.example.tp_loomo.ui.profile.ChangePasswordScreen
 import com.example.tp_loomo.ui.profile.EditProfileScreen
 import com.example.tp_loomo.ui.project.ProjectDetailsScreen
-import com.example.tp_loomo.ui.project.TaskDetailsScreen // <-- Import adicionado
+import com.example.tp_loomo.ui.project.ProjectDetailsUserScreen
+import com.example.tp_loomo.ui.project.TaskDetailsScreen
 import com.example.tp_loomo.ui.theme.TploomoTheme
 import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.ui.project.TaskRecordFormScreen
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.delay
 
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "splash") {
 
                     composable("splash") {
+                        // Corrigido: Removido o 'android.window.' que o autocomplete adicionou por engano
                         SplashScreen {
                             val user = supabase.auth.currentUserOrNull()
                             if (user != null) {
@@ -104,31 +107,56 @@ class MainActivity : ComponentActivity() {
                         ChangePasswordScreen(onBack = { navController.popBackStack() })
                     }
 
-                    // --- ROTA DO PROJETO (Atualizada com o clique na tarefa) ---
+                    // --- ROTA DO GESTOR (ORIGINAL) ---
                     composable(
                         route = "projectDetails/{projectId}",
                         arguments = listOf(navArgument("projectId") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val projectId = backStackEntry.arguments?.getInt("projectId") ?: return@composable
-
                         ProjectDetailsScreen(
                             projectId = projectId,
                             onBackClick = { navController.popBackStack() },
+                            onTaskClick = { taskId -> navController.navigate("taskDetails/$taskId") }
+                        )
+                    }
+
+                    // --- NOVA ROTA DO UTILIZADOR (BLINDADA) ---
+                    composable(
+                        route = "projectDetailsUser/{projectId}",
+                        arguments = listOf(navArgument("projectId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val projectId = backStackEntry.arguments?.getInt("projectId") ?: return@composable
+                        ProjectDetailsUserScreen(
+                            projectId = projectId,
+                            onBackClick = { navController.popBackStack() },
                             onTaskClick = { taskId ->
-                                // O comando para abrir a página da tarefa
+                                // Corrigido: O User clica e vai para a mesma TaskDetailsScreen
                                 navController.navigate("taskDetails/$taskId")
                             }
                         )
                     }
 
-                    // --- NOVA ROTA DOS DETALHES DA TAREFA ---
+                    // --- ROTA DA TAREFA (O Ecrã onde se vê a tarefa e se clica no +) ---
                     composable(
                         route = "taskDetails/{taskId}",
                         arguments = listOf(navArgument("taskId") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
-
                         TaskDetailsScreen(
+                            taskId = taskId,
+                            onBackClick = { navController.popBackStack() },
+                            // Quando clica no +, abre o formulário
+                            onAddRecordClick = { navController.navigate("taskRecordForm/$taskId") }
+                        )
+                    }
+
+                    // --- ROTA DO FORMULÁRIO (O Ecrã para adicionar informações) ---
+                    composable(
+                        route = "taskRecordForm/{taskId}",
+                        arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+                        TaskRecordFormScreen(
                             taskId = taskId,
                             onBackClick = { navController.popBackStack() }
                         )
@@ -142,29 +170,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SplashScreen(onTimeout: () -> Unit) {
     val loomoBlue = Color(0xFF1C61A2)
-
     LaunchedEffect(Unit) {
         delay(3000)
         onTimeout()
     }
-
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(loomoBlue),
+        modifier = Modifier.fillMaxSize().background(loomoBlue),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_loomo_logo),
-            contentDescription = "Símbolo Loomo",
-            modifier = Modifier.size(250.dp)
-        )
+        Image(painter = painterResource(id = R.drawable.ic_loomo_logo), contentDescription = null, modifier = Modifier.size(250.dp))
         Spacer(modifier = Modifier.height(16.dp))
-        Image(
-            painter = painterResource(id = R.drawable.ic_loomo_logo_text),
-            contentDescription = "Texto Loomo",
-            modifier = Modifier.width(200.dp)
-        )
+        Image(painter = painterResource(id = R.drawable.ic_loomo_logo_text), contentDescription = null, modifier = Modifier.width(200.dp))
     }
 }

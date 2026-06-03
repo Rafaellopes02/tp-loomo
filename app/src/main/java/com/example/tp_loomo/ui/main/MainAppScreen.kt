@@ -22,6 +22,8 @@ import com.example.tp_loomo.ui.admin.DashboardAdminScreen
 import com.example.tp_loomo.ui.admin.ProjectsAdminScreen
 import com.example.tp_loomo.ui.admin.UsersAdminScreen
 import com.example.tp_loomo.ui.components.FloatingBottomNavBar
+import com.example.tp_loomo.ui.manager.ProjectsManagerScreen
+import com.example.tp_loomo.ui.user.TasksUserScreen
 import com.example.tp_loomo.viewmodel.MainViewModel
 
 @Composable
@@ -36,7 +38,6 @@ fun MainAppScreen(
 ) {
     val backgroundColor = Color(0xFFFAFAFA)
     val context = LocalContext.current
-
     val currentRole = viewModel.currentRole
 
     LaunchedEffect(Unit) {
@@ -72,14 +73,27 @@ fun MainAppScreen(
                         "loading" -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = Color(0xFF1C61A2))
                         }
-                        else -> DashboardUserScreen()
+                        else -> DashboardUserScreen(
+                            onProjectClick = { projectId ->
+                                // AGORA APONTA PARA O ECRÃ BLINDADO DO USER
+                                navController.navigate("projectDetailsUser/$projectId")
+                            }
+                        )
                     }
                 }
                 1 -> {
-                    if (currentRole == "admin") {
-                        ProjectsAdminScreen(navController = navController)
-                    } else {
-                        PlaceholderScreen("Ecrã de Projetos em Construção")
+                    when (currentRole) {
+                        "admin" -> ProjectsAdminScreen(navController = navController)
+                        "project_manager" -> ProjectsManagerScreen(
+                            onProjectClick = { projectId ->
+                                navController.navigate("projectDetails/$projectId")
+                            }
+                        )
+                        else -> TasksUserScreen(
+                            onTaskClick = { taskId ->
+                                navController.navigate("taskDetails/$taskId")
+                            }
+                        )
                     }
                 }
                 2 -> {

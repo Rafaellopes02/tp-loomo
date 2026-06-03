@@ -10,6 +10,7 @@ import com.example.tp_loomo.data.remote.model.Project
 import com.example.tp_loomo.data.remote.model.Task
 import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.data.repository.ProjectRepository
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -47,9 +48,15 @@ class ProjectDetailsViewModel : ViewModel() {
     var allUsers by mutableStateOf<List<UserProfile>>(emptyList())
         private set
 
+    var currentUserId by mutableStateOf<String?>(null)
+        private set
+
     fun loadProjectDetails(projectId: Int) {
         viewModelScope.launch {
             isLoading = true
+            currentUserId = supabase.auth.currentUserOrNull()?.id
+
+            project = repository.getProjectById(projectId)
             try {
                 project = repository.getProjectById(projectId)
                 teamMembers = repository.getProjectMembers(projectId)
