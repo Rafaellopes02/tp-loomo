@@ -1,5 +1,8 @@
 package com.example.tp_loomo.ui.project
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,12 +22,34 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.viewmodel.TaskDetailsViewModel
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
+
+// --- MODELO PARA A BASE DE DADOS ---
+@Serializable
+data class TaskRecordInsert(
+    val task_id: Int,
+    val user_id: String,
+    val progress: Int,
+    val location: String,
+    val date: String,
+    val time_spent: String,
+    val observations: String,
+    val photo_url: String?
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,11 +66,27 @@ fun TaskRecordFormScreen(
     val project = viewModel.project
     val isLoading = viewModel.isLoading
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     var progress by remember { mutableFloatStateOf(0.2f) }
     var location by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var timeSpent by remember { mutableStateOf("") }
     var observations by remember { mutableStateOf("") }
+
+    // Estados para a foto e para o botão de guardar
+    var selectedImage by remember { mutableStateOf<String?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
+
+    // Lançador da galeria
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            selectedImage = uri.toString()
+        }
+    }
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
@@ -147,29 +188,105 @@ fun TaskRecordFormScreen(
             Text(text = "Anexar Ficheiros", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Box(
-                modifier = Modifier.fillMaxWidth().height(80.dp).clip(RoundedCornerShape(16.dp)).background(Color.White)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (selectedImage != null) 200.dp else 80.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White)
                     .drawBehind {
                         drawRoundRect(
                             color = Color.LightGray, style = Stroke(width = 4f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)),
                             cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
                         )
                     }
-                    .clickable { /* Ação de anexar foto */ },
+                    .clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = Color.Gray)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clica para anexar uma foto", color = Color.Gray, fontWeight = FontWeight.Medium)
+                if (selectedImage != null) {
+                    AsyncImage(
+                        model = selectedImage,
+                        contentDescription = "Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = Color.Gray)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Clica para anexar uma foto", color = Color.Gray, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
             Button(
-                onClick = { onBackClick() }, modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)), shape = RoundedCornerShape(16.dp)
-            ) { Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                onClick = {
+                    if (isSaving) return@Button
+
+                    coroutineScope.launch {
+                        isSaving = true
+                        try {
+                            val userId = supabase.auth.currentUserOrNull()?.id ?: throw Exception("Utilizador não autenticado")
+                            var finalUrl: String? = null
+
+                            // 1. Faz upload da foto se existir
+                            if (selectedImage != null) {
+                                val uri = android.net.Uri.parse(selectedImage)
+                                val inputStream = context.contentResolver.openInputStream(uri)
+                                val byteArray = inputStream?.readBytes()
+
+                                if (byteArray != null) {
+                                    val fileName = "task_${taskId}_${System.currentTimeMillis()}.jpg"
+                                    val bucket = supabase.storage["task_photos"]
+                                    bucket.upload(fileName, byteArray)
+                                    finalUrl = bucket.publicUrl(fileName)
+                                }
+                            }
+
+                            // 2. Prepara os dados para a tabela
+                            val progressoFinal = (progress * 100).roundToInt()
+                            val novoRegisto = TaskRecordInsert(
+                                task_id = taskId,
+                                user_id = userId,
+                                progress = progressoFinal,
+                                location = location,
+                                date = date,
+                                time_spent = timeSpent,
+                                observations = observations,
+                                photo_url = finalUrl
+                            )
+
+                            // 3. Insere na tabela task_records
+                            supabase.postgrest["task_records"].insert(novoRegisto)
+
+                            supabase.postgrest["tasks"].update(
+                                mapOf("completion_rate" to progressoFinal)
+                            ) {
+                                filter { eq("id", taskId) }
+                            }
+
+                            Toast.makeText(context, "Registo guardado com sucesso!", Toast.LENGTH_SHORT).show()
+                            onBackClick()
+
+                        } catch (e: Exception) {
+                            android.util.Log.e("TaskRecord", "Erro a guardar: ${e.message}")
+                            Toast.makeText(context, "Erro a guardar: ${e.message}", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isSaving = false
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
         }

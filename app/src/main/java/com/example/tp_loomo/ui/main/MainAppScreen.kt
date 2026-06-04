@@ -75,8 +75,15 @@ fun MainAppScreen(
                         }
                         else -> DashboardUserScreen(
                             onProjectClick = { projectId ->
-                                // AGORA APONTA PARA O ECRÃ BLINDADO DO USER
                                 navController.navigate("projectDetailsUser/$projectId")
+                            },
+                            // 1. Ao clicar na tarefa, abre os detalhes da mesma
+                            onTaskClick = { taskId ->
+                                navController.navigate("taskDetails/$taskId")
+                            },
+                            // 2. Ao clicar em "Ver todas", muda a barra em baixo para o separador 1 (Tarefas)
+                            onViewAllTasksClick = {
+                                onTabChange(1)
                             }
                         )
                     }

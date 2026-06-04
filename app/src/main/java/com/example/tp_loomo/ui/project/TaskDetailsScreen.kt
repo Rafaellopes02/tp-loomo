@@ -21,17 +21,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.tp_loomo.viewmodel.TaskDetailsViewModel
+import com.example.tp_loomo.viewmodel.TaskRecordUiModel
 
 @Composable
 fun TaskDetailsScreen(
     taskId: Int,
     onBackClick: () -> Unit,
-    onAddRecordClick: () -> Unit = {}, // <-- Ação para o botão flutuante
+    onAddRecordClick: () -> Unit = {},
     viewModel: TaskDetailsViewModel = viewModel()
 ) {
     LaunchedEffect(taskId) {
@@ -41,7 +44,7 @@ fun TaskDetailsScreen(
     val task = viewModel.task
     val project = viewModel.project
     val isLoading = viewModel.isLoading
-    val taskRecords = emptyList<String>()
+    val taskRecords = viewModel.taskRecords
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
@@ -57,7 +60,7 @@ fun TaskDetailsScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize()) { // Box a envolver tudo para o botão flutuante
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -111,35 +114,43 @@ fun TaskDetailsScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
+                // --- DESENHAR A LISTA DE REGISTOS! ---
                 if (taskRecords.isNotEmpty()) {
                     Text(text = "Registos dos utilizadores", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                     Spacer(modifier = Modifier.height(16.dp))
-                    UserRecordCard()
-                    Spacer(modifier = Modifier.height(40.dp))
+
+                    taskRecords.forEach { recordModel ->
+                        UserRecordCard(uiModel = recordModel)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 } else {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // --- BOTÃO CONCLUIR (Bloqueio removido para testares) ---
-                Button(
-                    onClick = { viewModel.completeTask(taskId) { onBackClick() } },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)), shape = RoundedCornerShape(16.dp)
-                ) { Text("Marcar como Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                if (viewModel.isAssignedToCurrentUser) {
+                    Button(
+                        onClick = { viewModel.completeTask(taskId) { onBackClick() } },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)), shape = RoundedCornerShape(16.dp)
+                    ) { Text("Marcar como Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                }
 
-                Spacer(modifier = Modifier.height(80.dp)) // Espaço extra para o botão Flutuante não tapar
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
 
-        // --- BOTÃO FLUTUANTE '+' (Bloqueio removido para testares) ---
-        FloatingActionButton(
-            onClick = onAddRecordClick,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 32.dp),
-            containerColor = Color(0xFF1C61A2),
-            contentColor = Color.White,
-            shape = CircleShape
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Adicionar Registo", modifier = Modifier.size(32.dp))
+        if (viewModel.isAssignedToCurrentUser) {
+            FloatingActionButton(
+                onClick = onAddRecordClick,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 32.dp),
+                containerColor = Color(0xFF1C61A2),
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Adicionar Registo", modifier = Modifier.size(32.dp))
+            }
         }
     }
 }
@@ -155,28 +166,62 @@ fun TaskInfoCard(title: String, value: String, valueColor: Color, modifier: Modi
     }
 }
 
+// CARTÃO DINÂMICO QUE RECEBE OS DADOS
 @Composable
-fun UserRecordCard() {
+fun UserRecordCard(uiModel: TaskRecordUiModel) {
+    val record = uiModel.record
+    val profile = uiModel.userProfile
+
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(20.dp)) {
+            // CABEÇALHO DO CARTÃO
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF90CAF9)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White) }
+                    Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFFFB74D)), contentAlignment = Alignment.Center) {
+                        if (!profile?.avatar_url.isNullOrEmpty()) {
+                            AsyncImage(model = profile?.avatar_url, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                        } else {
+                            Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
+                        }
+                    }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column { Text(text = "Tiago Melo", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black); Text(text = "8 Mai 2026", fontSize = 13.sp, color = Color.Gray) }
+                    Column {
+                        Text(text = profile?.full_name ?: "Utilizador Desconhecido", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(text = record.date.ifEmpty { "Sem data" }, fontSize = 13.sp, color = Color.Gray)
+                    }
                 }
-                Box(modifier = Modifier.background(Color(0xFFE3F2FD), shape = RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) { Text(text = "50%", color = Color(0xFF1C61A2), fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+                Box(modifier = Modifier.background(Color(0xFFE3F2FD), shape = RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text(text = "${record.progress}%", color = Color(0xFF1C61A2), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
+
+            // LOCALIZAÇÃO E TEMPO
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp)); Spacer(modifier = Modifier.width(4.dp)); Text(text = "Braga", fontSize = 13.sp, color = Color.Gray) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = record.location.ifEmpty { "Não especificado" }, fontSize = 13.sp, color = Color.Gray)
+                }
                 Spacer(modifier = Modifier.width(24.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp)); Spacer(modifier = Modifier.width(4.dp)); Text(text = "3h 45min", fontSize = 13.sp, color = Color.Gray) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = record.time_spent.ifEmpty { "N/A" }, fontSize = 13.sp, color = Color.Gray)
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Criação dos ecrãs principais no Figma.", fontSize = 14.sp, color = Color.DarkGray)
-            Spacer(modifier = Modifier.height(16.dp))
-            Box(modifier = Modifier.size(width = 100.dp, height = 80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEEEEE)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray) }
+
+            // OBSERVAÇÕES
+            Text(text = record.observations.ifEmpty { "Sem observações." }, fontSize = 14.sp, color = Color.DarkGray)
+
+            // FOTO DO TRABALHO
+            if (!record.photo_url.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(modifier = Modifier.size(width = 100.dp, height = 80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEEEEE)), contentAlignment = Alignment.Center) {
+                    AsyncImage(model = record.photo_url, contentDescription = "Foto Anexa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
+            }
         }
     }
 }

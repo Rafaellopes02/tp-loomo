@@ -21,6 +21,20 @@ class ProjectRepository {
     @Serializable
     data class ProjectUpdate(val name: String, val description: String?)
 
+    @Serializable
+    data class TaskRecordRow(
+        val id: Int? = null,
+        val task_id: Int,
+        val user_id: String,
+        val progress: Int,
+        val location: String,
+        val date: String,
+        val time_spent: String,
+        val observations: String,
+        val photo_url: String? = null,
+        val created_at: String? = null
+    )
+
     suspend fun getManagedProjects(): List<Project> {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return emptyList()
         return supabase.postgrest["projects"].select {
@@ -161,7 +175,7 @@ class ProjectRepository {
             // 3. Vai à tabela 'tasks' buscar apenas as tarefas que têm estes IDs
             val tasks = supabase.postgrest["tasks"].select {
                 filter {
-                    isIn("id", taskIds.map { it as Any }) // O 'as Any' previne erros de tipagem do Supabase!
+                    isIn("id", taskIds.map { it as Any })
                 }
             }.decodeList<Task>()
 
@@ -185,7 +199,7 @@ class ProjectRepository {
                 }
             }.decodeList<TaskAssignmentRow>()
 
-            assignments.isNotEmpty() // Devolve 'true' se encontrar pelo menos um registo
+            assignments.isNotEmpty()
         } catch (e: Exception) {
             false
         }
@@ -206,6 +220,17 @@ class ProjectRepository {
                 filter { isIn("id", userIds.map { it as Any }) }
             }.decodeList<UserProfile>()
         } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getTaskRecords(taskId: Int): List<TaskRecordRow> {
+        return try {
+            supabase.postgrest["task_records"].select {
+                filter { eq("task_id", taskId) }
+            }.decodeList<TaskRecordRow>()
+        } catch (e: Exception) {
+            android.util.Log.e("ProjectRepository", "Erro ao carregar registos: ${e.message}")
             emptyList()
         }
     }

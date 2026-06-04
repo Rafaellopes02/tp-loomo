@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
@@ -26,12 +27,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.model.Project
-import com.example.tp_loomo.ui.project.TaskItemCard
 import com.example.tp_loomo.viewmodel.UserViewModel
 
 @Composable
 fun DashboardUserScreen(
     onProjectClick: (Int) -> Unit = {},
+    onTaskClick: (Int) -> Unit = {},
+    onViewAllTasksClick: () -> Unit = {},
     viewModel: UserViewModel = viewModel()
 ) {
     LaunchedEffect(Unit) {
@@ -52,7 +54,7 @@ fun DashboardUserScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
-        contentPadding = PaddingValues(bottom = 100.dp) // Espaço para a BottomBar
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
         // --- CABEÇALHO ---
         item {
@@ -103,18 +105,26 @@ fun DashboardUserScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
         }
 
         // --- TÍTULO DAS TAREFAS ---
         item {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "As Suas Tarefas", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                Text(text = "Ver todas", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2), modifier = Modifier.clickable { /* Navegar para tarefas completas */ })
+                Text(
+                    text = "Ver todas",
+                    fontSize = 14.sp,
+                    color = Color(0xFF1C61A2),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onViewAllTasksClick() }
+                )
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         // --- LISTA DE TAREFAS ---
@@ -123,10 +133,13 @@ fun DashboardUserScreen(
                 Text("Não tens tarefas pendentes.", color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(24.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         } else {
-            items(tasks.take(5)) { task -> // Mostra apenas as primeiras 5 para não encher muito o ecrã
+            items(tasks.take(5)) { task ->
                 TaskItemCard(
                     title = task.title,
-                    time = task.due_date ?: "Sem data limite"
+                    time = task.due_date ?: "Sem data limite",
+                    onClick = {
+                        task.id?.let { onTaskClick(it) }
+                    }
                 )
             }
         }
@@ -192,6 +205,30 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
                 Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 10.dp, vertical = 6.dp)) {
                     Text(text = project.end_date ?: "Sem prazo", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+    }
+}
+
+// --- CARTÃO DA TAREFA CONFIGURADO PARA RECEBER O CLIQUE ---
+@Composable
+fun TaskItemCard(title: String, time: String, onClick: () -> Unit = {}) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .clickable { onClick() }
+    ) {
+        Row(modifier = Modifier.padding(20.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.FormatListBulleted, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(28.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = time, fontSize = 13.sp, color = Color.Gray)
             }
         }
     }
