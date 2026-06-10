@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,9 +31,23 @@ fun DashboardManagerScreen(
     managerViewModel: ManagerViewModel = viewModel(),
     profileViewModel: ProfileViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
-        profileViewModel.loadProfile()
         managerViewModel.loadDashboardData()
+        profileViewModel.loadProfile()
+    }
+
+// Recarrega o perfil quando o SyncWorker terminar (observa o WorkManager)
+    LaunchedEffect(Unit) {
+        androidx.work.WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow("profile_sync_unique")
+            .collect { infoList ->
+                val finished = infoList.any { it.state == androidx.work.WorkInfo.State.SUCCEEDED }
+                if (finished) {
+                    profileViewModel.loadProfile()
+                }
+            }
     }
 
     val userData = profileViewModel.userData

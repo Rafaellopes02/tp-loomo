@@ -1,5 +1,6 @@
 package com.example.tp_loomo.ui.profile
 
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,6 +42,7 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,7 +84,11 @@ fun EditProfileScreen(
                         avatarUrl = publicUrl
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Erro ao carregar foto: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        "Erro ao carregar foto: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 } finally {
                     isUploadingPhoto = false
                 }
@@ -95,7 +101,16 @@ fun EditProfileScreen(
             coroutineScope.launch {
                 try {
                     val result = supabase.postgrest["profiles"]
-                        .select(columns = Columns.list("id", "full_name", "username", "avatar_url", "role", "email")) {
+                        .select(
+                            columns = Columns.list(
+                                "id",
+                                "full_name",
+                                "username",
+                                "avatar_url",
+                                "role",
+                                "email"
+                            )
+                        ) {
                             filter { eq("id", targetUserId) }
                         }
                         .decodeSingle<UserProfile>()
@@ -106,18 +121,43 @@ fun EditProfileScreen(
                     email = result.email ?: "Sem e-mail registado"
 
                 } catch (_: Exception) { // Aviso amarelo removido (substituindo e por _)
-                    Toast.makeText(context, "Erro ao carregar dados do utilizador", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Erro ao carregar dados do utilizador",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     onBack()
                 }
             }
         } else {
-            val user = supabase.auth.currentUserOrNull()
-            if (user != null) {
+        val user = supabase.auth.currentUserOrNull()
+        if (user != null) {
+            try {
+                val result = supabase.postgrest["profiles"]
+                    .select(
+                        columns = Columns.list(
+                            "id",
+                            "full_name",
+                            "username",
+                            "avatar_url",
+                            "email"
+                        )
+                    ) {
+                        filter { eq("id", user.id) }
+                    }
+                    .decodeSingle<UserProfile>()
+
+                fullName = result.full_name ?: ""
+                username = result.username ?: ""
+                avatarUrl = result.avatar_url
+                email = result.email ?: user.email ?: ""
+            } catch (e: Exception) {
+                // fallback para metadata se falhar
                 fullName = user.userMetadata?.get("full_name")?.toString()?.replace("\"", "") ?: ""
                 username = user.userMetadata?.get("username")?.toString()?.replace("\"", "") ?: ""
-                avatarUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
                 email = user.email ?: ""
             }
+        }
         }
     }
 
@@ -130,13 +170,30 @@ fun EditProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // CABEÇALHO
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp),
+            contentAlignment = Alignment.Center
+        ) {
             IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", modifier = Modifier.size(32.dp))
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Voltar",
+                    modifier = Modifier.size(32.dp)
+                )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(id = R.string.porfile), fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                Text(stringResource(id = R.string.editeDataHere), fontSize = 16.sp, color = Color.Gray)
+                Text(
+                    stringResource(id = R.string.porfile),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    stringResource(id = R.string.editeDataHere),
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                )
             }
         }
 
@@ -166,17 +223,40 @@ fun EditProfileScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.size(40.dp), tint = loomoBlue)
+                    Icon(
+                        Icons.Outlined.CameraAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = loomoBlue
+                    )
                 }
             }
-            Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
-                Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(8.dp).size(20.dp), tint = loomoBlue)
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = CircleShape,
+                color = Color.White,
+                shadowElevation = 4.dp
+            ) {
+                Icon(
+                    Icons.Outlined.CameraAlt,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(20.dp),
+                    tint = loomoBlue
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(stringResource(id = R.string.edit), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End, color = loomoBlue, fontWeight = FontWeight.Bold)
+        Text(
+            stringResource(id = R.string.edit),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.End,
+            color = loomoBlue,
+            fontWeight = FontWeight.Bold
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -195,52 +275,69 @@ fun EditProfileScreen(
                 coroutineScope.launch {
                     isLoading = true
                     try {
-                        val nomeLimpo = fullName.trim()
-                        val userLimpo = username.trim()
+                        val idToUpdate = targetUserId ?: currentUserId
+                        if (idToUpdate != null) {
+                            // 1. Guarda sempre localmente primeiro
+                            val repository = com.example.tp_loomo.data.repository.ProfileRepository(context)
+                            repository.savePendingUpdate(
+                                fullName = fullName.trim(),
+                                username = username.trim(),
+                                avatarUrl = avatarUrl
+                            )
 
-                        if (targetUserId == null) {
-                            supabase.auth.modifyUser {
-                                data = buildJsonObject {
-                                    put("full_name", nomeLimpo)
-                                    put("username", userLimpo)
-                                    if (avatarUrl != null) put("avatar_url", avatarUrl)
-                                }
+                            // 2. Tenta sincronizar imediatamente com a API
+                            val syncedNow = repository.syncPendingUpdate()
+
+                            if (syncedNow) {
+                                Toast.makeText(context, "Perfil atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                // 3. Se falhou (sem rede), agenda sync para quando houver rede
+                                agendarSync(context)
+                                Toast.makeText(
+                                    context,
+                                    "Sem rede. As alterações serão sincronizadas automaticamente.",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
+
+                            onBack()
                         }
-
-                        if (currentUserId != null) {
-                            val updateData = buildJsonObject {
-                                put("full_name", nomeLimpo)
-                                put("username", userLimpo)
-                                if (avatarUrl != null) put("avatar_url", avatarUrl!!)
-                            }
-
-                            supabase.postgrest["profiles"].update(updateData) {
-                                filter { eq("id", currentUserId) }
-                            }
-                        }
-
-                        Toast.makeText(context, context.getString(R.string.porfileUpdated), Toast.LENGTH_SHORT).show()
-                        onBack()
-
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        // Fallback de segurança: guarda offline e agenda sync
+                        val repository = com.example.tp_loomo.data.repository.ProfileRepository(context)
+                        repository.savePendingUpdate(fullName.trim(), username.trim(), avatarUrl)
+                        agendarSync(context)
+                        Toast.makeText(
+                            context,
+                            "Erro de rede. As alterações foram guardadas localmente.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        onBack()
                     } finally {
                         isLoading = false
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             interactionSource = interactionSource,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isLoading || isUploadingPhoto) Color.LightGray else if (isPressed) Color(0xFF8FB1D0) else Color(0xFF1C61A2)
+                containerColor = if (isLoading || isUploadingPhoto) Color.LightGray else if (isPressed) Color(
+                    0xFF8FB1D0
+                ) else Color(0xFF1C61A2)
             )
         ) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text(stringResource(id = R.string.Confirm), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                Text(
+                    stringResource(id = R.string.Confirm),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
             }
         }
 
@@ -249,11 +346,18 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { showDeleteDialog = true },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)) // Vermelho
             ) {
-                Text("Remover Utilizador", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "Remover Utilizador",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
         }
 
@@ -272,13 +376,28 @@ fun EditProfileScreen(
                         coroutineScope.launch {
                             try {
                                 if (targetUserId != null) {
-                                    supabase.postgrest["profiles"].delete { filter { eq("id", targetUserId) } }
-                                    Toast.makeText(context, "Utilizador removido com sucesso!", Toast.LENGTH_SHORT).show()
+                                    supabase.postgrest["profiles"].delete {
+                                        filter {
+                                            eq(
+                                                "id",
+                                                targetUserId
+                                            )
+                                        }
+                                    }
+                                    Toast.makeText(
+                                        context,
+                                        "Utilizador removido com sucesso!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     showDeleteDialog = false
                                     onUserDeleted()
                                 }
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Erro ao remover: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao remover: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
                         }
                     }
@@ -294,8 +413,14 @@ fun EditProfileScreen(
         )
     }
 }
+
 @Composable
-fun EditField(value: String, onValueChange: (String) -> Unit, fieldBg: Color, enabled: Boolean = true) {
+fun EditField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    fieldBg: Color,
+    enabled: Boolean = true
+) {
     TextField(
         value = value,
         onValueChange = onValueChange,
@@ -313,4 +438,16 @@ fun EditField(value: String, onValueChange: (String) -> Unit, fieldBg: Color, en
         ),
         singleLine = true
     )
+}
+
+private fun agendarSync(context: Context) {
+    val request = androidx.work.OneTimeWorkRequestBuilder<com.example.tp_loomo.worker.SyncWorker>()
+        .setConstraints(
+            androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .build()
+        )
+        .build()
+    androidx.work.WorkManager.getInstance(context)
+        .enqueueUniqueWork("profile_sync", androidx.work.ExistingWorkPolicy.REPLACE, request)
 }

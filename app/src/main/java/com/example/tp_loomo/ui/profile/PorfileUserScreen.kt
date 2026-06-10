@@ -35,9 +35,11 @@ fun ProfileUserScreen(
     onChangePassword: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
+
     LaunchedEffect(Unit) {
-        viewModel.loadProfile()
+        viewModel.loadProfile() // ← adicionar isto
     }
+
 
     val userData = viewModel.userData
 

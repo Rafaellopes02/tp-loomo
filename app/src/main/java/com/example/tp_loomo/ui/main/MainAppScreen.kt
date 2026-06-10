@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.key
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -20,9 +21,12 @@ import com.example.tp_loomo.ui.user.DashboardUserScreen
 import com.example.tp_loomo.ui.profile.ProfileUserScreen
 import com.example.tp_loomo.ui.admin.DashboardAdminScreen
 import com.example.tp_loomo.ui.admin.ProjectsAdminScreen
+import com.example.tp_loomo.ui.admin.stats.StatsAdminScreen
 import com.example.tp_loomo.ui.admin.UsersAdminScreen
 import com.example.tp_loomo.ui.components.FloatingBottomNavBar
+import android.app.Application
 import com.example.tp_loomo.ui.manager.ProjectsManagerScreen
+import com.example.tp_loomo.ui.manager.StatsManagerScreen
 import com.example.tp_loomo.ui.user.TasksUserScreen
 import com.example.tp_loomo.viewmodel.MainViewModel
 
@@ -34,19 +38,28 @@ fun MainAppScreen(
     onEditProfile: () -> Unit,
     onChangePassword: () -> Unit,
     navController: NavController,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
+            .getInstance(LocalContext.current.applicationContext as Application)
+    )
 ) {
     val backgroundColor = Color(0xFFFAFAFA)
     val context = LocalContext.current
     val currentRole = viewModel.currentRole
 
+    // Log para diagnosticar o estado do cargo
+    android.util.Log.d("NAV_DEBUG", "Role na MainAppScreen: '$currentRole'")
+
+    // 1. Carrega o role no início
     LaunchedEffect(Unit) {
         viewModel.fetchUserRole()
     }
 
+    // 2. Observa o erro de forma explícita
     LaunchedEffect(viewModel.errorMessage) {
-        viewModel.errorMessage?.let { error ->
-            Toast.makeText(context, "Erro BD: $error", Toast.LENGTH_LONG).show()
+        val message = viewModel.errorMessage
+        if (!message.isNullOrBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -65,61 +78,57 @@ fun MainAppScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            when (currentTab) {
-                0 -> {
-                    when (currentRole) {
-                        "admin" -> DashboardAdminScreen(navController = navController)
-                        "project_manager" -> DashboardManagerScreen()
-                        "loading" -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color(0xFF1C61A2))
+            // Se ainda está a carregar, mostra apenas o spinner central
+            if (currentRole == "loading") {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF1C61A2))
+                }
+            } else {
+                // Só processa a navegação quando o cargo já foi definido
+                when (currentTab) {
+                    0 -> {
+                        android.util.Log.d("NAV_DEBUG", "Comparando '$currentRole' com 'project_manager'")
+                        when (currentRole) {
+                            "admin" -> DashboardAdminScreen(navController = navController)
+                            "project_manager" -> DashboardManagerScreen()
+                            else -> DashboardUserScreen(
+                                onProjectClick = { projectId -> navController.navigate("projectDetailsUser/$projectId") },
+                                onTaskClick = { taskId -> navController.navigate("taskDetails/$taskId") },
+                                onViewAllTasksClick = { onTabChange(1) }
+                            )
                         }
-                        else -> DashboardUserScreen(
-                            onProjectClick = { projectId ->
-                                navController.navigate("projectDetailsUser/$projectId")
-                            },
-                            // 1. Ao clicar na tarefa, abre os detalhes da mesma
-                            onTaskClick = { taskId ->
-                                navController.navigate("taskDetails/$taskId")
-                            },
-                            // 2. Ao clicar em "Ver todas", muda a barra em baixo para o separador 1 (Tarefas)
-                            onViewAllTasksClick = {
-                                onTabChange(1)
+                    }
+                    1 -> {
+                        when (currentRole) {
+                            "admin" -> ProjectsAdminScreen(navController = navController)
+                            "project_manager" -> ProjectsManagerScreen(
+                                onProjectClick = { projectId -> navController.navigate("projectDetails/$projectId") }
+                            )
+                            else -> TasksUserScreen(
+                                onTaskClick = { taskId -> navController.navigate("taskDetails/$taskId") }
+                            )
+                        }
+                    }
+                    2 -> {
+                        when (currentRole) {
+                            "admin" -> StatsAdminScreen()
+                            "project_manager" -> StatsManagerScreen()
+                            else -> PlaceholderScreen("Ecrã em construção")
+                        }
+                    }
+                    3 -> {
+                        if (currentRole == "admin") {
+                            UsersAdminScreen()
+                        } else {
+                            key(currentTab) {
+                                ProfileUserScreen(onLogout, onEditProfile, onChangePassword)
                             }
-                        )
+                        }
                     }
-                }
-                1 -> {
-                    when (currentRole) {
-                        "admin" -> ProjectsAdminScreen(navController = navController)
-                        "project_manager" -> ProjectsManagerScreen(
-                            onProjectClick = { projectId ->
-                                navController.navigate("projectDetails/$projectId")
-                            }
-                        )
-                        else -> TasksUserScreen(
-                            onTaskClick = { taskId ->
-                                navController.navigate("taskDetails/$taskId")
-                            }
-                        )
-                    }
-                }
-                2 -> {
-                    if (currentRole == "admin" || currentRole == "project_manager") {
-                        PlaceholderScreen("Ecrã de Estatísticas em Construção")
-                    } else {
-                        PlaceholderScreen("Ecrã de Histórico em Construção")
-                    }
-                }
-                3 -> {
-                    if (currentRole == "admin") {
-                        UsersAdminScreen()
-                    } else {
-                        ProfileUserScreen(onLogout, onEditProfile, onChangePassword)
-                    }
-                }
-                4 -> {
-                    if (currentRole == "admin") {
-                        ProfileUserScreen(onLogout, onEditProfile, onChangePassword)
+                    4 -> {
+                        if (currentRole == "admin") {
+                            ProfileUserScreen(onLogout, onEditProfile, onChangePassword)
+                        }
                     }
                 }
             }
