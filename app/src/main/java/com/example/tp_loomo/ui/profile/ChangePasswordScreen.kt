@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,13 +37,11 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
     val loomoBlue = Color(0xFF8FB1D0)
 
     // VARIÁVEIS DAS PASSWORDS
-    var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     // VARIÁVEIS DE VISIBILIDADE
-    var oldPasswordVisible by remember { mutableStateOf(false) }
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
@@ -74,37 +71,11 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(id = R.string.newPassword), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(stringResource(id = R.string.chagePassword), fontSize = 16.sp, color = Color.Gray)
+                Text(stringResource(id = R.string.changeYourPassword), fontSize = 16.sp, color = Color.Gray)
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
-
-        // CAMPO 0: Introduzir Senha Antiga
-        TextField(
-            value = oldPassword,
-            onValueChange = { oldPassword = it },
-            placeholder = { Text(stringResource(id = R.string.enterOldPassword), color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = Color.Gray) },
-            trailingIcon = {
-                val image = if (oldPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
-                IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar/Esconder Senha", tint = Color.Gray)
-                }
-            },
-            visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = fieldBg,
-                unfocusedContainerColor = fieldBg,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // CAMPO 1: Introduzir Nova Senha
         TextField(
@@ -161,7 +132,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
         // BOTÃO CONFIRMAR
         Button(
             onClick = {
-                if (oldPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
+                if (newPassword.isBlank() || confirmPassword.isBlank()) {
                     Toast.makeText(context, context.getString(R.string.fillAllFields), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -180,11 +151,6 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                         val currentUserEmail = supabase.auth.currentUserOrNull()?.email
 
                         if (currentUserEmail != null) {
-                            supabase.auth.signInWith(Email) {
-                                email = currentUserEmail
-                                password = oldPassword
-                            }
-
                             supabase.auth.modifyUser {
                                 this.password = newPassword
                             }
@@ -195,7 +161,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                             Toast.makeText(context, context.getString(R.string.ErrorVerifyAccount), Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, context.getString(R.string.incorrectOldPassword), Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, context.getString(R.string.ErrorVerifyAccount), Toast.LENGTH_LONG).show()
                     } finally {
                         isLoading = false
                     }

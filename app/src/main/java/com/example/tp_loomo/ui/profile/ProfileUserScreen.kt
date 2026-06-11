@@ -53,6 +53,7 @@ fun ProfileUserScreen(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
         Text(text = stringResource(id = R.string.porfile), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(id = R.string.viewPorfile), fontSize = 14.sp, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(32.dp))
         Box(
