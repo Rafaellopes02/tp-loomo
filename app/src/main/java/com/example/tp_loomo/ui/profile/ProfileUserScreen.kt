@@ -88,11 +88,12 @@ fun ProfileUserScreen(
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-            border = BorderStroke(1.dp, Color.Red)
+            border = BorderStroke(2.dp, Color.Red)
         ) {
-            Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = null)
+
+            Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = null, modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = stringResource(id = R.string.logout), fontWeight = FontWeight.Bold)
+            Text(text = stringResource(id = R.string.logout), fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
     }
 }
@@ -109,15 +110,15 @@ fun ProfileStatItem(number: String, label: String) {
 fun ProfileMenuButton(icon: ImageVector, label: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp)),
+        modifier = Modifier.fillMaxWidth().height(56.dp).border(2.dp, Color(0xFF1C61A2), RoundedCornerShape(16.dp)),
         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF1C61A2))
+            Icon(icon, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = label, color = Color(0xFF1C61A2), modifier = Modifier.weight(1f))
-            Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color(0xFF1C61A2))
+            Text(text = label, color = Color(0xFF1C61A2), fontSize = 18.sp, modifier = Modifier.weight(2f))
+            Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color(0xFF1C61A2), modifier = Modifier.size(28.dp))
         }
     }
 }
