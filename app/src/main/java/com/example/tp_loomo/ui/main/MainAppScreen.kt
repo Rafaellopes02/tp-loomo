@@ -28,6 +28,7 @@ import android.app.Application
 import com.example.tp_loomo.ui.manager.ProjectsManagerScreen
 import com.example.tp_loomo.ui.manager.StatsManagerScreen
 import com.example.tp_loomo.ui.user.TasksUserScreen
+import com.example.tp_loomo.ui.user.HistoryUserScreen
 import com.example.tp_loomo.viewmodel.MainViewModel
 
 @Composable
@@ -113,7 +114,7 @@ fun MainAppScreen(
                         when (currentRole) {
                             "admin" -> StatsAdminScreen()
                             "project_manager" -> StatsManagerScreen()
-                            else -> PlaceholderScreen("Ecrã em construção")
+                            else -> HistoryUserScreen()
                         }
                     }
                     3 -> {

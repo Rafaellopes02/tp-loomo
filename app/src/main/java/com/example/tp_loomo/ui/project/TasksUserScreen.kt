@@ -1,6 +1,7 @@
 package com.example.tp_loomo.ui.user
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,8 @@ import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.TaskUiModel
 import com.example.tp_loomo.viewmodel.TasksUserViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun TasksUserScreen(
@@ -163,7 +166,7 @@ fun TaskLargeCard(uiModel: TaskUiModel, onClick: () -> Unit) {
                     Text(text = task.title + " - ", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
 
                     Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                        Text(text = "Até ${task.due_date ?: "Indefinido"}", color = Color(0xFFD32F2F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Até ${formatDueDate(task.due_date)}", color = Color(0xFFD32F2F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -175,9 +178,37 @@ fun TaskLargeCard(uiModel: TaskUiModel, onClick: () -> Unit) {
 @Composable
 fun FilterChipTask(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(if (isSelected) Color(0xFF1C61A2) else Color.White).clickable { onClick() }.padding(horizontal = 20.dp, vertical = 10.dp)
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(if (isSelected) Color(0xFF1C61A2) else Color.White)
+            .let {
+                if (isSelected) it else it.border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(24.dp))
+            }
+            .clickable { onClick() }
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         Text(text = text, color = if (isSelected) Color.White else Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+// Formata a data "yyyy-MM-dd" vinda da BD para "dd Mmm yyyy" (ex: "16 Mai 2026")
+fun formatDueDate(rawDate: String?): String {
+    if (rawDate.isNullOrBlank()) return "Indefinido"
+    return try {
+        val dbFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val uiFormat = SimpleDateFormat("dd MMM yyyy", Locale("pt", "PT"))
+        val date = dbFormat.parse(rawDate) ?: return rawDate
+        uiFormat.format(date)
+            .replace(".", "")
+            .replaceFirstChar { it.uppercase() }
+            .let { formatted ->
+                // Capitaliza também o nome do mês (ex: "16 mai 2026" -> "16 Mai 2026")
+                formatted.split(" ").joinToString(" ") { word ->
+                    if (word.any { it.isLetter() }) word.replaceFirstChar { c -> c.uppercase() } else word
+                }
+            }
+    } catch (e: Exception) {
+        rawDate
     }
 }
 

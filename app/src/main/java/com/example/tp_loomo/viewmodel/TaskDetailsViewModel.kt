@@ -13,11 +13,15 @@ import com.example.tp_loomo.data.repository.ProjectRepository
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 data class TaskRecordUiModel(
     val record: ProjectRepository.TaskRecordRow,
     val userProfile: UserProfile?
 )
+
+@Serializable
+data class TaskStatusUpdate(val status: String, val completion_rate: Int)
 
 class TaskDetailsViewModel : ViewModel() {
     private val repository = ProjectRepository()
@@ -93,7 +97,7 @@ class TaskDetailsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 supabase.postgrest["tasks"].update(
-                    mapOf("status" to "completed", "completion_rate" to 100)
+                    TaskStatusUpdate(status = "completed", completion_rate = 100)
                 ) { filter { eq("id", taskId) } }
                 onSuccess()
             } catch (e: Exception) {
