@@ -91,7 +91,9 @@ fun MainAppScreen(
                         android.util.Log.d("NAV_DEBUG", "Comparando '$currentRole' com 'project_manager'")
                         when (currentRole) {
                             "admin" -> DashboardAdminScreen(navController = navController)
-                            "project_manager" -> DashboardManagerScreen()
+                            "project_manager" -> DashboardManagerScreen(
+                                onProjectClick = { projectId -> navController.navigate("projectDetails/$projectId") }
+                            )
                             else -> DashboardUserScreen(
                                 onProjectClick = { projectId -> navController.navigate("projectDetailsUser/$projectId") },
                                 onTaskClick = { taskId -> navController.navigate("taskDetails/$taskId") },

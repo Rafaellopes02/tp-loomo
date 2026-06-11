@@ -1,6 +1,7 @@
 package com.example.tp_loomo.ui.manager
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,9 +26,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.viewmodel.ManagerViewModel
 import com.example.tp_loomo.viewmodel.ProfileViewModel
+import com.example.tp_loomo.viewmodel.ProjectUiModel
 
 @Composable
 fun DashboardManagerScreen(
+    onProjectClick: (Int) -> Unit = {},
     managerViewModel: ManagerViewModel = viewModel(),
     profileViewModel: ProfileViewModel = viewModel()
 ) {
@@ -82,7 +85,12 @@ fun DashboardManagerScreen(
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 val primeiroNome = userData?.nomeCompleto?.split(" ")?.first() ?: "Gestor"
-                Text(text = "Olá, $primeiroNome", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(
+                    text = "Olá, $primeiroNome",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.Black
+                )
                 Text(text = "Bem-vindo de volta!", fontSize = 14.sp, color = Color.Gray)
             }
         }
@@ -90,11 +98,25 @@ fun DashboardManagerScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Cartões de Estatísticas (Placeholder)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StatCard(title = "Tarefas Pendentes", value = "8", bgColor = Color(0xFF9EBAE1), modifier = Modifier.weight(1f))
-            StatCard(title = "Tarefas Concluídas", value = "10", bgColor = Color(0xFF90D992), modifier = Modifier.weight(1f))
+        // StatCards dinâmicos (substitui os hardcoded "8" e "10")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StatCard(
+                title = "Tarefas Pendentes",
+                value = managerViewModel.totalPending.toString(),
+                bgColor = Color(0xFF9EBAE1),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = "Tarefas Concluídas",
+                value = managerViewModel.totalCompleted.toString(),
+                bgColor = Color(0xFF90D992),
+                textColor = Color(0xFF0AA20F),
+                modifier = Modifier.weight(1f)
+            )
         }
-
         Spacer(modifier = Modifier.height(32.dp))
 
         // Secção de Projetos
@@ -103,44 +125,50 @@ fun DashboardManagerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Meus Projetos", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-            Text(text = "Ver todas", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
+            Text(
+                text = "Meus Projetos",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            Text(
+                text = "Ver todas",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1C61A2)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Estado de Carregamento ou Lista
+
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-        } else if (projects.isEmpty()) {
+        } else if (managerViewModel.projectSummaries.isEmpty()) {
             Text(text = "Ainda não tens projetos a teu cargo.", color = Color.Gray)
         } else {
-            // Lista Dinâmica de Projetos
-            val palette = listOf(
-                listOf(Color(0xFFFF9A9E), Color(0xFFFECFEF)),
-                listOf(Color(0xFFa18cd1), Color(0xFFfbc2eb)),
-                listOf(Color(0xFF84fab0), Color(0xFF8fd3f4)),
-                listOf(Color(0xFF434343), Color(0xFF000000))
-            )
 
-            projects.forEachIndexed { index, project ->
-                ManagerProjectCard(
-                    title = project.name,
-                    pending = 0,
-                    completed = 0,
-                    progress = 0.0f,
-                    bgColors = palette[index % palette.size]
+            managerViewModel.projectSummaries.forEach { summary ->
+                DashboardProjectCard( // <-- Chamamos o nosso novo cartão gémeo
+                    uiModel = ProjectUiModel(
+                        project = summary.project,
+                        avatars = summary.avatars,
+                        progress = if ((summary.pending + summary.completed) == 0) 0
+                        else ((summary.completed.toFloat() / (summary.pending + summary.completed)) * 100).toInt(),
+                        pendingTasks = summary.pending,
+                        completedTasks = summary.completed
+                    ),
+                    onClick = { summary.project.id?.let { onProjectClick(it) } }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
 @Composable
-fun StatCard(title: String, value: String, bgColor: Color, modifier: Modifier = Modifier) {
+fun StatCard(title: String, value: String, bgColor: Color,textColor: Color = Color(0xFF1C61A2), modifier: Modifier = Modifier) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
@@ -148,47 +176,78 @@ fun StatCard(title: String, value: String, bgColor: Color, modifier: Modifier = 
         modifier = modifier.height(100.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-            Text(text = title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
-            Text(text = value, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C61A2))
+            Text(text = title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Text(text = value, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
         }
     }
 }
 
 @Composable
-fun ManagerProjectCard(title: String, pending: Int, completed: Int, progress: Float, bgColors: List<Color>) {
+fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
+    val project = uiModel.project
+    val avatars = uiModel.avatars
+
+    var currentCover by remember(project.cover_url) {
+        mutableStateOf<Any?>(
+            when (project.cover_url) {
+                "fundo_preto" -> com.example.tp_loomo.R.drawable.fundo_preto
+                "fundo_rosa" -> com.example.tp_loomo.R.drawable.fundo_rosa
+                "fundo_azul" -> com.example.tp_loomo.R.drawable.fundo_azul
+                "fundo_branco" -> com.example.tp_loomo.R.drawable.fundo_branco
+                else -> project.cover_url
+            }
+        )
+    }
+
     Card(
+        // A ÚNICA DIFERENÇA: Removemos o padding horizontal de 24.dp para encaixar perfeitamente na Dashboard
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
+            // CAPA E AVATARES
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(brush = Brush.horizontalGradient(colors = bgColors))
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "Opções", tint = Color(0xFF1C61A2))
+                modifier = Modifier.fillMaxWidth().height(140.dp).background(Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
+            ) {
+                if (currentCover != null) {
+                    AsyncImage(model = currentCover, contentDescription = "Capa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
-                Text(text = "${(progress * 100).toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2), modifier = Modifier.align(Alignment.End))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                    color = Color(0xFF1C61A2),
-                    trackColor = Color(0xFFE0E0E0),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f)))
+
+                Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 16.dp)) {
+                    OverlappingAvatarsCard(avatarUrls = avatars) // Esta função vem do outro ficheiro, vai funcionar perfeitamente
+                }
+            }
+
+            // DADOS DO PROJETO
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = project.name, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                    Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.Gray)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Percentagem e Barra
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Text(text = "${uiModel.progress}%", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C61A2))
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
+                    Box(modifier = Modifier.fillMaxWidth(uiModel.progress / 100f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Rodapé com Tarefas Pendentes e Concluídas
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "$pending tarefas pendentes", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
-                    Text(text = "$completed concluídas", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                    Text(text = "${uiModel.pendingTasks} tarefas pendentes", color = Color(0xFF1C61A2), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "${uiModel.completedTasks} concluídas", color = Color(0xFF4CAF50), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
