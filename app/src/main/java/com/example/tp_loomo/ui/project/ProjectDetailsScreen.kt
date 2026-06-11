@@ -16,13 +16,17 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -72,6 +76,7 @@ fun ProjectDetailsScreen(
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
 
+    var showEvaluateModal by remember { mutableStateOf(false) }
     var realManagerName by remember { mutableStateOf("A carregar...") }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
@@ -84,6 +89,12 @@ fun ProjectDetailsScreen(
     val projectTasks = viewModel.projectTasks
     val isLoading = viewModel.isLoading
     val allUsers = viewModel.allUsers
+
+    // Cálculo dinâmico da percentagem
+    val totalTasks = projectTasks.size
+    val completedTasks = projectTasks.count { it.status == "completed" || it.completion_rate == 100 }
+    val progressFloat = if (totalTasks > 0) completedTasks.toFloat() / totalTasks else 0f
+    val progressPercent = (progressFloat * 100).toInt()
 
     LaunchedEffect(project?.project_manager_id) {
         if (project?.project_manager_id != null) {
@@ -173,7 +184,6 @@ fun ProjectDetailsScreen(
                             Text(text = "Veja detalhes do projeto", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
 
-                        // AGORA É SEMPRE VISÍVEL
                         Box {
                             IconButton(onClick = { showMenu = true }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.White, modifier = Modifier.size(32.dp))
@@ -193,6 +203,12 @@ fun ProjectDetailsScreen(
                                     leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color.Black) },
                                     onClick = { showMenu = false; editName = project.name; editDescription = project.description ?: ""; isEditing = true }
                                 )
+                                DropdownMenuItem(
+                                    text = { Text("Concluir Projeto", color = Color.Black, fontWeight = FontWeight.Medium) },
+                                    leadingIcon = { Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Color(0xFF388E3C)) },
+                                    onClick = { showMenu = false; showEvaluateModal = true }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
                                 DropdownMenuItem(
                                     text = { Text("Eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
@@ -238,11 +254,13 @@ fun ProjectDetailsScreen(
                         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                             Text(text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-                        Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                        // CORRIGIDO: percentagem dinâmica
+                        Text(text = "$progressPercent%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
-                        Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
+                        // CORRIGIDO: barra dinâmica
+                        Box(modifier = Modifier.fillMaxWidth(progressFloat).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
                     }
                 }
             }
@@ -271,7 +289,6 @@ fun ProjectDetailsScreen(
             }
         }
 
-        // AGORA É SEMPRE VISÍVEL
         FloatingActionButton(
             onClick = { showCreateTaskModal = true },
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
@@ -345,6 +362,26 @@ fun ProjectDetailsScreen(
                 },
                 shape = RoundedCornerShape(24.dp),
                 containerColor = Color.White
+            )
+        }
+        if (showEvaluateModal) {
+            val taskCountByMember = remember(projectTasks, teamMembers) {
+                teamMembers.associate { member ->
+                    member.id to projectTasks.count { task ->
+                        task.status == "completed" || task.completion_rate == 100
+                    }
+                }
+            }
+            EvaluateTeamBottomSheet(
+                teamMembers = teamMembers,
+                taskCounts  = taskCountByMember,
+                onDismiss   = { showEvaluateModal = false },
+                onConfirm   = { evaluations ->
+                    viewModel.submitTeamEvaluations(projectId, evaluations) {
+                        showEvaluateModal = false
+                        onBackClick()
+                    }
+                }
             )
         }
     }
@@ -472,16 +509,13 @@ fun CreateTaskBottomSheet(
                 }
             }
 
-            // --- MOSTRAR AVATARES COMO NO MOCKUP ---
             if (selectedMembers.isNotEmpty()) {
                 Row(
                     modifier = Modifier.padding(start = 32.dp, top = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OverlappingAvatars(avatarUrls = selectedMembers.map { it.avatar_url }.toList())
-
                     Spacer(modifier = Modifier.width(12.dp))
-
                     Text(
                         text = "- ${selectedMembers.size} Membros",
                         color = Color(0xFF1C61A2),
@@ -596,6 +630,176 @@ fun SetCoverScreen(
                     }
                 }
             }
+        }
+
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EvaluateTeamBottomSheet(
+    teamMembers: List<UserProfile>,
+    taskCounts: Map<String, Int>,
+    onDismiss: () -> Unit,
+    onConfirm: (Map<String, Pair<Int, String>>) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val ratings      = remember { mutableStateMapOf<String, Int>() }
+    val observations = remember { mutableStateMapOf<String, String>() }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.90f)  // ocupa 90% do ecrã
+        ) {
+            // Título fixo no topo
+            Text(
+                text = "Avaliar Equipa",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 8.dp, bottom = 20.dp)
+            )
+
+            // Lista com scroll
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(teamMembers) { member ->
+                    MemberEvaluationCard(
+                        member         = member,
+                        completedTasks = taskCounts[member.id] ?: 0,
+                        rating         = ratings[member.id] ?: 0,
+                        observation    = observations[member.id] ?: "",
+                        onRatingChange = { ratings[member.id] = it },
+                        onObsChange    = { observations[member.id] = it }
+                    )
+                }
+            }
+
+            // Botão fixo no fundo
+            Button(
+                onClick = {
+                    val result = teamMembers.associate { m ->
+                        m.id to Pair(ratings[m.id] ?: 0, observations[m.id] ?: "")
+                    }
+                    onConfirm(result)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Concluído", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun MemberEvaluationCard(
+    member: UserProfile,
+    completedTasks: Int,
+    rating: Int,
+    observation: String,
+    onRatingChange: (Int) -> Unit,
+    onObsChange: (String) -> Unit
+) {
+    Card(
+        shape  = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            // Avatar + nome + tarefas
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFB74D)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!member.avatar_url.isNullOrEmpty() && member.avatar_url != "null") {
+                        AsyncImage(
+                            model = member.avatar_url,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = member.full_name ?: member.username ?: "Utilizador",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "$completedTasks tarefas concluídas",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Estrelas
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                (1..5).forEach { star ->
+                    Icon(
+                        imageVector = if (star <= rating)
+                            androidx.compose.material.icons.Icons.Filled.Star
+                        else
+                            androidx.compose.material.icons.Icons.Outlined.StarBorder,
+                        contentDescription = "Estrela $star",
+                        tint = if (star <= rating) Color(0xFFFFC107) else Color(0xFFCCCCCC),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable { onRatingChange(star) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Campo de observações
+            OutlinedTextField(
+                value = observation,
+                onValueChange = onObsChange,
+                placeholder = { Text("Observações ...", color = Color.LightGray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = Color(0xFF1C61A2),
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedContainerColor   = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
         }
     }
 }

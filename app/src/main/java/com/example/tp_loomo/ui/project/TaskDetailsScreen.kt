@@ -97,7 +97,17 @@ fun TaskDetailsScreen(
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     TaskInfoCard(title = "Prazo - Limite", value = task.due_date ?: "Sem prazo", valueColor = Color(0xFFD32F2F), modifier = Modifier.weight(1f))
-                    TaskInfoCard(title = "Estado", value = if (task.status == "pending") "Em andamento" else task.status ?: "Desconhecido", valueColor = Color(0xFFD4A017), modifier = Modifier.weight(1f))
+                    val (statusLabel, statusColor) = when (task.status) {
+                        "pending"   -> "Em andamento" to Color(0xFFD4A017)   // amber
+                        "completed" -> "Concluído"    to Color(0xFF2E7D32)   // green
+                        else        -> (task.status ?: "Desconhecido") to Color.Gray
+                    }
+                    TaskInfoCard(
+                        title = "Estado",
+                        value = statusLabel,
+                        valueColor = statusColor,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -129,7 +139,7 @@ fun TaskDetailsScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                if (viewModel.isAssignedToCurrentUser) {
+                if (viewModel.isAssignedToCurrentUser && task.status != "completed") {
                     Button(
                         onClick = { viewModel.completeTask(taskId) { onBackClick() } },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -141,7 +151,7 @@ fun TaskDetailsScreen(
             }
         }
 
-        if (viewModel.isAssignedToCurrentUser) {
+        if (viewModel.isAssignedToCurrentUser && task?.status != "completed") {
             FloatingActionButton(
                 onClick = onAddRecordClick,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 32.dp),

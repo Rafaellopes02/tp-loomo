@@ -25,6 +25,14 @@ data class TaskInsert(
 )
 
 @Serializable
+data class TeamEvaluationInsert(
+    val project_id: Int,
+    val user_id: String,
+    val rating: Int,
+    val observations: String?
+)
+
+@Serializable
 data class TaskAssignmentInsert(
     val task_id: Int,
     val user_id: String
@@ -126,6 +134,36 @@ class ProjectDetailsViewModel : ViewModel() {
                 onSuccess()
             } catch (e: Exception) {
                 android.util.Log.e("ProjectDetailsVM", "Erro ao criar tarefa: ${e.message}")
+            }
+        }
+    }
+
+    fun submitTeamEvaluations(
+        projectId: Int,
+        evaluations: Map<String, Pair<Int, String>>, // userId -> (rating, obs)
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val list = evaluations.map { (userId, ratingObs) ->
+                    TeamEvaluationInsert(
+                        project_id = projectId,
+                        user_id = userId,
+                        rating = ratingObs.first,
+                        observations = ratingObs.second.ifBlank { null }
+                    )
+                }
+                supabase.postgrest["team_evaluations"].insert(list)
+
+                // Marca o projeto como concluído
+                supabase.postgrest["projects"]
+                    .update({ set("status", "completed") }) {
+                        filter { eq("id", projectId) }
+                    }
+
+                onSuccess()
+            } catch (e: Exception) {
+                android.util.Log.e("ProjectDetailsVM", "Erro ao avaliar equipa: ${e.message}")
             }
         }
     }

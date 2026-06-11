@@ -13,6 +13,8 @@ import com.example.tp_loomo.data.repository.ProjectRepository
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+
 
 data class TaskRecordUiModel(
     val record: ProjectRepository.TaskRecordRow,
@@ -20,6 +22,12 @@ data class TaskRecordUiModel(
 )
 
 class TaskDetailsViewModel : ViewModel() {
+
+    @Serializable
+    private data class TaskStatusUpdate(
+        val status: String,
+        val completion_rate: Int
+    )
     private val repository = ProjectRepository()
 
     var task by mutableStateOf<Task?>(null)
@@ -65,7 +73,7 @@ class TaskDetailsViewModel : ViewModel() {
                 // 3. Carrega os perfis dos donos dos registos
                 val profiles = if (userIds.isNotEmpty()) {
                     supabase.postgrest["profiles"].select {
-                        filter { isIn("id", userIds.map { it as Any }) }
+                        filter { isIn("id", userIds) }
                     }.decodeList<UserProfile>()
                 } else emptyList()
 
@@ -93,8 +101,9 @@ class TaskDetailsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 supabase.postgrest["tasks"].update(
-                    mapOf("status" to "completed", "completion_rate" to 100)
+                    TaskStatusUpdate(status = "completed", completion_rate = 100)
                 ) { filter { eq("id", taskId) } }
+                task = task?.copy(status = "completed", completion_rate = 100)
                 onSuccess()
             } catch (e: Exception) {
                 android.util.Log.e("TaskDetailsVM", "Erro ao concluir: ${e.message}")
