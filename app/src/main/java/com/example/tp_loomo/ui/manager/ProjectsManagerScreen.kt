@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,9 +68,9 @@ fun ProjectsManagerScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Os Seus Projetos", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(text = stringResource(id = R.string.your_projects_title), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Veja todos os seus projetos", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                Text(text = stringResource(id = R.string.view_all_projects_subtitle), fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -80,11 +81,11 @@ fun ProjectsManagerScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                FilterChipProject("Todas", selectedFilter == "Todas") { selectedFilter = "Todas" }
+                FilterChipProject(stringResource(id = R.string.all), selectedFilter == "Todas") { selectedFilter = "Todas" }
                 Spacer(modifier = Modifier.width(12.dp))
-                FilterChipProject("Andamento", selectedFilter == "Andamento") { selectedFilter = "Andamento" }
+                FilterChipProject(stringResource(id = R.string.filter_in_progress), selectedFilter == "Andamento") { selectedFilter = "Andamento" }
                 Spacer(modifier = Modifier.width(12.dp))
-                FilterChipProject("Concluidos", selectedFilter == "Concluidos") { selectedFilter = "Concluidos" }
+                FilterChipProject(stringResource(id = R.string.filter_completed), selectedFilter == "Concluidos") { selectedFilter = "Concluidos" }
             }
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -93,7 +94,7 @@ fun ProjectsManagerScreen(
         if (filteredProjects.isEmpty()) {
             item {
                 Text(
-                    text = "Nenhum projeto encontrado.",
+                    text = stringResource(id = R.string.no_projects_found),
                     color = Color.Gray,
                     modifier = Modifier.fillMaxWidth().padding(32.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -139,7 +140,7 @@ fun ProjectLargeCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(140.dp).background(Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
             ) {
                 if (currentCover != null) {
-                    AsyncImage(model = currentCover, contentDescription = "Capa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    AsyncImage(model = currentCover, contentDescription = stringResource(id = R.string.cover_content_desc), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f)))
 
@@ -152,7 +153,7 @@ fun ProjectLargeCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(text = project.name, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.Gray)
+                    Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(id = R.string.more_options_content_desc), tint = Color.Gray)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -170,8 +171,18 @@ fun ProjectLargeCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
 
                 // Rodapé com Tarefas Pendentes e Concluídas
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "${uiModel.pendingTasks} tarefas pendentes", color = Color(0xFF1C61A2), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "${uiModel.completedTasks} concluídas", color = Color(0xFF4CAF50), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(id = R.string.pending_tasks_count, uiModel.pendingTasks),
+                        color = Color(0xFF1C61A2),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(id = R.string.completed_tasks_count, uiModel.completedTasks),
+                        color = Color(0xFF4CAF50),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

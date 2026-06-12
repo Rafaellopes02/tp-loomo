@@ -37,9 +37,8 @@ fun ProfileUserScreen(
 ) {
 
     LaunchedEffect(Unit) {
-        viewModel.loadProfile() // ← adicionar isto
+        viewModel.loadProfile()
     }
-
 
     val userData = viewModel.userData
 
@@ -61,15 +60,18 @@ fun ProfileUserScreen(
             contentAlignment = Alignment.Center
         ) {
             if (!userData?.avatarUrl.isNullOrEmpty()) {
-                AsyncImage(model = userData?.avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                AsyncImage(model = userData?.avatarUrl, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
             } else {
                 Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color.LightGray)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = userData?.nomeCompleto ?: "A carregar...", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Text(text = userData?.nomeUtilizador ?: "@...", fontSize = 16.sp, color = Color(0xFF1C61A2))
+
+        // Mapeamento seguro da string de carregamento fora de blocos assíncronos
+        val displayName = userData?.nomeCompleto ?: stringResource(id = R.string.state_loading)
+        Text(text = displayName, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(text = userData?.nomeUtilizador ?: "@…", fontSize = 16.sp, color = Color(0xFF1C61A2))
 
         Spacer(modifier = Modifier.height(32.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -91,7 +93,6 @@ fun ProfileUserScreen(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
             border = BorderStroke(2.dp, Color.Red)
         ) {
-
             Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = null, modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(id = R.string.logout), fontWeight = FontWeight.Bold, fontSize = 18.sp)

@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,7 +69,7 @@ fun DashboardUserScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     if (user?.avatar_url != null) {
-                        AsyncImage(model = user.avatar_url, contentDescription = "Perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        AsyncImage(model = user.avatar_url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     } else {
                         Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
                     }
@@ -79,12 +80,12 @@ fun DashboardUserScreen(
                 // Texto de Boas-vindas
                 Column {
                     Text(
-                        text = "Olá, ${user?.full_name?.split(" ")?.firstOrNull() ?: "Utilizador"}",
+                        text = stringResource(id = R.string.hello) + (user?.full_name?.split(" ")?.firstOrNull() ?: stringResource(id = R.string.user)),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
                     )
-                    Text(text = "Bem-vindo de volta!", fontSize = 14.sp, color = Color.Gray)
+                    Text(text = stringResource(id = R.string.login_subtitle), fontSize = 14.sp, color = Color.Gray)
                 }
             }
         }
@@ -97,7 +98,7 @@ fun DashboardUserScreen(
             ) {
                 if (projects.isEmpty()) {
                     item {
-                        Text("Ainda não estás em nenhum projeto.", color = Color.Gray, modifier = Modifier.padding(vertical = 32.dp))
+                        Text(stringResource(id = R.string.not_in_any_project), color = Color.Gray, modifier = Modifier.padding(vertical = 32.dp))
                     }
                 } else {
                     items(projects) { project ->
@@ -115,9 +116,9 @@ fun DashboardUserScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "As Suas Tarefas", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(text = stringResource(id = R.string.your_tasks_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Text(
-                    text = "Ver todas",
+                    text = stringResource(id = R.string.see_all),
                     fontSize = 14.sp,
                     color = Color(0xFF1C61A2),
                     fontWeight = FontWeight.Bold,
@@ -130,13 +131,13 @@ fun DashboardUserScreen(
         // --- LISTA DE TAREFAS ---
         if (tasks.isEmpty()) {
             item {
-                Text("Não tens tarefas pendentes.", color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(24.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(stringResource(id = R.string.no_pending_tasks), color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(24.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         } else {
             items(tasks.take(5)) { task ->
                 TaskItemCard(
                     title = task.title,
-                    time = task.due_date ?: "Sem data limite",
+                    time = task.due_date ?: stringResource(id = R.string.no_deadline),
                     onClick = {
                         task.id?.let { onTaskClick(it) }
                     }
@@ -176,7 +177,7 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
                 if (currentCover != null) {
                     AsyncImage(
                         model = currentCover,
-                        contentDescription = "Capa",
+                        contentDescription = stringResource(id = R.string.cover_content_desc),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -197,13 +198,13 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Trabalho Prático", fontSize = 13.sp, color = Color.Gray)
+                Text(text = stringResource(id = R.string.project_type_label), fontSize = 13.sp, color = Color.Gray)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Prazo Badge
                 Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 10.dp, vertical = 6.dp)) {
-                    Text(text = project.end_date ?: "Sem prazo", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = project.end_date ?: stringResource(id = R.string.no_deadline_short), color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

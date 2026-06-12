@@ -57,7 +57,7 @@ fun UsersAdminScreen(
                     .decodeList<UserProfile>()
                 users = result
             } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao carregar utilizadores: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.error_load_users, e.message ?: ""), Toast.LENGTH_SHORT).show()
             } finally {
                 isLoading = false
             }
@@ -87,7 +87,6 @@ fun UsersAdminScreen(
             }
         )
     } else {
-        // ECRÃ NORMAL DA LISTA
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA))) {
             Column(modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally) {
@@ -130,7 +129,7 @@ fun UsersAdminScreen(
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Adicionar", modifier = Modifier.size(32.dp))
+                Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.btn_add_short), modifier = Modifier.size(32.dp))
             }
 
             if (showAddUserModal) {
@@ -168,19 +167,19 @@ fun UserCard(user: UserProfile, onClick: () -> Unit) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) {
                 if (!user.avatar_url.isNullOrEmpty() && user.avatar_url != "null") {
-                    AsyncImage(model = user.avatar_url, contentDescription = "Avatar", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = user.avatar_url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = user.full_name ?: "Sem Nome", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(text = if (user.username != null) "@${user.username}" else "@...", fontSize = 14.sp, color = Color.Gray)
+                Text(text = user.full_name ?: stringResource(id = R.string.unnamed_user), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = if (user.username != null) "@${user.username}" else "@…", fontSize = 14.sp, color = Color.Gray)
 
                 Spacer(modifier = Modifier.height(6.dp))
                 val (roleName, bgColor, textColor) = when(user.role) {
-                    "admin" -> Triple("Admin", Color(0xFFF3E19C), Color(0xFFF57F17))
+                    "admin" -> Triple(stringResource(id = R.string.admin), Color(0xFFF3E19C), Color(0xFFF57F17))
                     "project_manager" -> Triple(stringResource(R.string.manager), Color(0xFFC4AED6), Color(0xFF6A1B9A))
                     else -> Triple(stringResource(R.string.user), Color(0xFF9EBAE1), Color(0xFF1C61A2))
                 }

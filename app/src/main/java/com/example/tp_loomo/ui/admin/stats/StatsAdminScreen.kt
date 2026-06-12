@@ -22,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.ui.admin.stats.reports.StatTaskRecord2
 import io.github.jan.supabase.postgrest.postgrest
@@ -34,14 +36,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.text.SimpleDateFormat
-import com.example.tp_loomo.ui.admin.stats.reports.buildReportHtml  // <-- novo import
+import com.example.tp_loomo.ui.admin.stats.reports.buildReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.buildTaskReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.buildUserReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.exportHtmlToPdf
 import com.example.tp_loomo.ui.admin.stats.reports.exportTaskHtmlToPdf
 import com.example.tp_loomo.ui.admin.stats.reports.exportUserHtmlToPdf
 import java.util.*
-
 
 // -----------------------------------------------------------
 // SCREEN PRINCIPAL
@@ -50,7 +51,6 @@ import java.util.*
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun StatsAdminScreenPreview() {
-    // Dados fictícios
     val fakeProjects = listOf(
         StatProject(id = 1, name = "Projeto Alpha", project_manager_id = "u1", description = "Descrição do projeto Alpha"),
         StatProject(id = 2, name = "Projeto Beta", project_manager_id = "u2", description = "Descrição do projeto Beta")
@@ -71,7 +71,6 @@ fun StatsAdminScreenPreview() {
         StatProjectMember(project_id = 2, user_id = "u3")
     )
 
-    // Estado local para a preview
     var selectedTab by remember { mutableStateOf("Projetos") }
 
     Box(
@@ -86,13 +85,13 @@ fun StatsAdminScreenPreview() {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Estatísticas",
+                text = stringResource(id = R.string.stats_title),
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
             )
             Text(
-                text = "Veja as estatísticas da app",
+                text = stringResource(id = R.string.stats_admin_subtitle),
                 fontSize = 18.sp,
                 color = Color.Gray
             )
@@ -103,9 +102,9 @@ fun StatsAdminScreenPreview() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
-                StatsFilterChip("Projetos", isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
-                StatsFilterChip("Tarefas", isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
-                StatsFilterChip("Utilizadores", isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
+                StatsFilterChip(stringResource(id = R.string.tab_projects), isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
+                StatsFilterChip(stringResource(id = R.string.tab_tasks), isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
+                StatsFilterChip(stringResource(id = R.string.tab_users), isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -122,17 +121,17 @@ fun StatsAdminScreenPreview() {
                             val allMembersCount = (teamIds + listOfNotNull(proj.project_manager_id)).distinct().size
                             StatExportCard(
                                 title = proj.name,
-                                subtitle = "${projectTasks.size} Tarefas - $allMembersCount Membros",
+                                subtitle = stringResource(id = R.string.project_card_summary, projectTasks.size, allMembersCount),
                                 onDownloadClick = {}
                             )
                         }
                     }
                     "Tarefas" -> {
                         items(fakeTasks) { task ->
-                            val projName = fakeProjects.find { it.id == task.project_id }?.name ?: "Projeto Apagado"
+                            val projName = fakeProjects.find { it.id == task.project_id }?.name ?: stringResource(id = R.string.project_deleted)
                             StatExportCard(
                                 title = task.title,
-                                subtitle = "Projeto: $projName",
+                                subtitle = stringResource(id = R.string.project_prefix, projName),
                                 onDownloadClick = {}
                             )
                         }
@@ -140,13 +139,13 @@ fun StatsAdminScreenPreview() {
                     "Utilizadores" -> {
                         items(fakeUsers) { user ->
                             val roleLabel = when (user.role) {
-                                "admin" -> "Administrador"
-                                "project_manager" -> "Gestor de Projeto"
-                                else -> "Membro da Equipa"
+                                "admin" -> stringResource(id = R.string.admin)
+                                "project_manager" -> stringResource(id = R.string.project_manager_role)
+                                else -> stringResource(id = R.string.team_member_role)
                             }
                             StatExportCard(
-                                title = user.full_name ?: "Sem Nome",
-                                subtitle = "Cargo: $roleLabel",
+                                title = user.full_name ?: stringResource(id = R.string.unnamed_user),
+                                subtitle = stringResource(id = R.string.user_role_prefix, roleLabel),
                                 onDownloadClick = {}
                             )
                         }
@@ -156,6 +155,7 @@ fun StatsAdminScreenPreview() {
         }
     }
 }
+
 @Composable
 fun StatsAdminScreen() {
     val coroutineScope = rememberCoroutineScope()
@@ -199,7 +199,7 @@ fun StatsAdminScreen() {
                 .decodeList<StatTaskAssignment>()
 
         } catch (e: Exception) {
-            Toast.makeText(context, "Erro a carregar estatísticas: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.error_load_stats, e.message ?: ""), Toast.LENGTH_LONG).show()
         } finally {
             isLoading = false
         }
@@ -217,14 +217,14 @@ fun StatsAdminScreen() {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Estatísticas",
+                text = stringResource(id = R.string.stats_title),
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
             )
 
             Text(
-                text = "Veja as estatísticas da app",
+                text = stringResource(id = R.string.stats_admin_subtitle),
                 fontSize = 18.sp,
                 color = Color.Gray
             )
@@ -234,9 +234,9 @@ fun StatsAdminScreen() {
             Row(modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
-                StatsFilterChip("Projetos", isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
-                StatsFilterChip("Tarefas", isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
-                StatsFilterChip("Utilizadores", isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
+                StatsFilterChip(stringResource(id = R.string.tab_projects), isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
+                StatsFilterChip(stringResource(id = R.string.tab_tasks), isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
+                StatsFilterChip(stringResource(id = R.string.tab_users), isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -253,7 +253,7 @@ fun StatsAdminScreen() {
                     when (selectedTab) {
                         "Projetos" -> {
                             if (projectsList.isEmpty()) {
-                                item { CenterEmptyMessage("Nenhum projeto encontrado.") }
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_projects_found)) }
                             } else {
                                 items(projectsList) { proj ->
                                     val projectTasks = tasksList.filter { it.project_id == proj.id }
@@ -262,13 +262,15 @@ fun StatsAdminScreen() {
 
                                     StatExportCard(
                                         title = proj.name,
-                                        subtitle = "${projectTasks.size} Tarefas - $allMembersCount Membros",
+                                        subtitle = stringResource(id = R.string.project_card_summary, projectTasks.size, allMembersCount),
                                         onDownloadClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 val manager = usersList.find { it.id == proj.project_manager_id }
                                                 val team = usersList.filter { teamIds.contains(it.id) }
 
+                                                // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
                                                 val html = buildReportHtml(
+                                                    context = context,
                                                     project = proj,
                                                     tasks = projectTasks,
                                                     manager = manager,
@@ -284,95 +286,106 @@ fun StatsAdminScreen() {
                             }
                         }
                         "Tarefas" -> {
-                            items(tasksList) { task ->
-                                val projName = projectsList.find { it.id == task.project_id }?.name ?: "Projeto Apagado"
-                                StatExportCard(
-                                    title = task.title,
-                                    subtitle = "Projeto: $projName",
-                                    onDownloadClick = {
-                                        coroutineScope.launch(Dispatchers.Main) {
-                                            try {
-                                                val assigned = taskAssignmentsList
-                                                    .filter { it.task_id == task.id }
-                                                    .mapNotNull { a -> usersList.find { it.id == a.user_id } }
+                            if (tasksList.isEmpty()) {
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_tasks_found)) }
+                            } else {
+                                items(tasksList) { task ->
+                                    val projName = projectsList.find { it.id == task.project_id }?.name ?: stringResource(id = R.string.project_deleted)
+                                    StatExportCard(
+                                        title = task.title,
+                                        subtitle = stringResource(id = R.string.project_prefix, projName),
+                                        onDownloadClick = {
+                                            coroutineScope.launch(Dispatchers.Main) {
+                                                try {
+                                                    val assigned = taskAssignmentsList
+                                                        .filter { it.task_id == task.id }
+                                                        .mapNotNull { a -> usersList.find { it.id == a.user_id } }
 
-                                                val records = supabase.postgrest["task_records"]
-                                                    .select(columns = Columns.list(
-                                                        "id", "task_id", "user_id", "progress",
-                                                        "location", "date", "time_spent", "observations", "photo_url"
-                                                    )) {
-                                                        filter { eq("task_id", task.id) }
-                                                    }
-                                                    .decodeList<StatTaskRecord2>()
+                                                    val records = supabase.postgrest["task_records"]
+                                                        .select(columns = Columns.list(
+                                                            "id", "task_id", "user_id", "progress",
+                                                            "location", "date", "time_spent", "observations", "photo_url"
+                                                        )) {
+                                                            filter { eq("task_id", task.id) }
+                                                        }
+                                                        .decodeList<StatTaskRecord2>()
 
-                                                val html = buildTaskReportHtml(
-                                                    task = task,
-                                                    projectName = projName,
-                                                    assignedUsers = assigned,
-                                                    records = records
-                                                )
-                                                exportTaskHtmlToPdf(context, html, task.title)
-                                            } catch (e: Exception) {
-                                                Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                                                    // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
+                                                    val html = buildTaskReportHtml(
+                                                        context = context,
+                                                        task = task,
+                                                        projectName = projName,
+                                                        assignedUsers = assigned,
+                                                        records = records
+                                                    )
+                                                    exportTaskHtmlToPdf(context, html, task.title)
+                                                } catch (e: Exception) {
+                                                    Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
+                                                }
                                             }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
-                        // No tab "Utilizadores":
                         "Utilizadores" -> {
-                            items(usersList) { user ->
-                                val roleLabel = when (user.role) {
-                                    "admin" -> "Administrador"
-                                    "project_manager" -> "Gestor de Projeto"
-                                    else -> "Membro da Equipa"
-                                }
-                                StatExportCard(
-                                    title = user.full_name ?: "Sem Nome",
-                                    subtitle = "Cargo: $roleLabel",
-                                    onDownloadClick = {
-                                        coroutineScope.launch(Dispatchers.Main) {
-                                            try {
-                                                val userTaskIds = taskAssignmentsList
-                                                    .filter { it.user_id == user.id }
-                                                    .map { it.task_id }
+                            if (usersList.isEmpty()) {
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_projects_found)) }
+                            } else {
+                                items(usersList) { user ->
+                                    val roleLabel = when (user.role) {
+                                        "admin" -> stringResource(id = R.string.admin)
+                                        "project_manager" -> stringResource(id = R.string.project_manager_role)
+                                        else -> stringResource(id = R.string.team_member_role)
+                                    }
+                                    StatExportCard(
+                                        title = user.full_name ?: stringResource(id = R.string.unnamed_user),
+                                        subtitle = stringResource(id = R.string.user_role_prefix, roleLabel),
+                                        onDownloadClick = {
+                                            coroutineScope.launch(Dispatchers.Main) {
+                                                try {
+                                                    val userTaskIds = taskAssignmentsList
+                                                        .filter { it.user_id == user.id }
+                                                        .map { it.task_id }
 
-                                                val userTasks = tasksList.filter { it.id in userTaskIds }
+                                                    val userTasks = tasksList.filter { it.id in userTaskIds }
 
-                                                val memberProjectIds = membersConnections
-                                                    .filter { it.user_id == user.id }
-                                                    .map { it.project_id }
+                                                    val memberProjectIds = membersConnections
+                                                        .filter { it.user_id == user.id }
+                                                        .map { it.project_id }
 
-                                                val memberProjects = projectsList.filter { it.id in memberProjectIds }
-                                                val managedProjects = projectsList.filter { it.project_manager_id == user.id }
+                                                    val memberProjects = projectsList.filter { it.id in memberProjectIds }
+                                                    val managedProjects = projectsList.filter { it.project_manager_id == user.id }
 
-                                                val records = supabase.postgrest["task_records"]
-                                                    .select(columns = Columns.list(
-                                                        "id", "task_id", "user_id", "progress",
-                                                        "location", "date", "time_spent", "observations", "photo_url"
-                                                    )) {
-                                                        filter { eq("user_id", user.id) }
-                                                    }
-                                                    .decodeList<StatTaskRecord2>()
+                                                    val records = supabase.postgrest["task_records"]
+                                                        .select(columns = Columns.list(
+                                                            "id", "task_id", "user_id", "progress",
+                                                            "location", "date", "time_spent", "observations", "photo_url"
+                                                        )) {
+                                                            filter { eq("user_id", user.id) }
+                                                        }
+                                                        .decodeList<StatTaskRecord2>()
 
-                                                val html = buildUserReportHtml(
-                                                    user = user,
-                                                    email = user.email,
-                                                    avatarUrl = user.avatar_url,
-                                                    memberProjects = memberProjects,
-                                                    managedProjects = managedProjects,
-                                                    assignedTasks = userTasks,
-                                                    records = records,
-                                                    allTasks = tasksList
-                                                )
-                                                exportUserHtmlToPdf(context, html, user.full_name ?: "user")
-                                            } catch (e: Exception) {
-                                                Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                                                    // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
+                                                    val html = buildUserReportHtml(
+                                                        context = context,
+                                                        user = user,
+                                                        email = user.email,
+                                                        avatarUrl = user.avatar_url,
+                                                        memberProjects = memberProjects,
+                                                        managedProjects = managedProjects,
+                                                        assignedTasks = userTasks,
+                                                        records = records,
+                                                        allTasks = tasksList
+                                                    )
+                                                    exportUserHtmlToPdf(context, html, user.full_name ?: "user")
+                                                } catch (e: Exception) {
+                                                    Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
+                                                }
                                             }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
@@ -381,4 +394,3 @@ fun StatsAdminScreen() {
         }
     }
 }
-

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
@@ -32,6 +31,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,6 +72,7 @@ fun ProjectDetailsScreen(
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
 
+    // 👇 REVERTIDO: Voltamos a usar as strings simples para evitar quebras no ciclo assíncrono
     var realManagerName by remember { mutableStateOf("A carregar...") }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
@@ -135,7 +136,7 @@ fun ProjectDetailsScreen(
 
     if (project == null) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
-            Text("Projeto não encontrado", color = Color.Gray)
+            Text(text = stringResource(id = R.string.error_project_not_found), color = Color.Gray)
         }
         return
     }
@@ -154,7 +155,7 @@ fun ProjectDetailsScreen(
                         .background(brush = Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
                 ) {
                     if (currentCover != null) {
-                        AsyncImage(model = currentCover, contentDescription = "Capa do Projeto", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        AsyncImage(model = currentCover, contentDescription = stringResource(id = R.string.cover_content_desc), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
 
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.29f)))
@@ -165,18 +166,17 @@ fun ProjectDetailsScreen(
                         verticalAlignment = Alignment.Top
                     ) {
                         IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(40.dp))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "Projeto", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                            Text(text = "Veja detalhes do projeto", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            Text(text = stringResource(id = R.string.project_details_title), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(text = stringResource(id = R.string.project_details_subtitle), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
 
-                        // AGORA É SEMPRE VISÍVEL
                         Box {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.White, modifier = Modifier.size(32.dp))
+                                Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(id = R.string.more_options_content_desc), tint = Color.White, modifier = Modifier.size(32.dp))
                             }
                             DropdownMenu(
                                 expanded = showMenu,
@@ -184,19 +184,19 @@ fun ProjectDetailsScreen(
                                 modifier = Modifier.background(Color(0xFFF5F5F5), shape = RoundedCornerShape(16.dp)).border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Mudar fundo", color = Color.Black, fontWeight = FontWeight.Medium) },
+                                    text = { Text(text = stringResource(id = R.string.menu_change_cover), color = Color.Black, fontWeight = FontWeight.Medium) },
                                     leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Black) },
                                     onClick = { showMenu = false; showCoverScreen = true }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Editar", color = Color.Black, fontWeight = FontWeight.Medium) },
+                                    text = { Text(text = stringResource(id = R.string.edit), color = Color.Black, fontWeight = FontWeight.Medium) },
                                     leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color.Black) },
                                     onClick = { showMenu = false; editName = project.name; editDescription = project.description ?: ""; isEditing = true }
                                 )
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = Color.LightGray)
                                 DropdownMenuItem(
-                                    text = { Text("Eliminar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
-                                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "Eliminar", tint = Color(0xFFD32F2F)) },
+                                    text = { Text(text = stringResource(id = R.string.menu_delete_project), color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold) },
+                                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color(0xFFD32F2F)) },
                                     onClick = { showMenu = false; showDeleteDialog = true }
                                 )
                             }
@@ -212,31 +212,43 @@ fun ProjectDetailsScreen(
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
                     if (isEditing) {
-                        OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("Nome do Projeto") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+                        OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text(stringResource(id = R.string.label_project_name)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
                         Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(12.dp))
+                        OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text(stringResource(id = R.string.description)) }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(12.dp))
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = { isEditing = false }) { Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Bold) }
+                            TextButton(onClick = { isEditing = false }) { Text(text = stringResource(id = R.string.btn_close_short), color = Color.Gray, fontWeight = FontWeight.Bold) }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = { viewModel.updateProject(projectId, editName, editDescription) { isEditing = false } },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)), shape = RoundedCornerShape(12.dp)
-                            ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
+                            ) { Text(text = stringResource(id = R.string.Confirm), color = Color.White, fontWeight = FontWeight.Bold) }
                         }
                     } else {
                         Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(text = project.description ?: "Sem descrição.", fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
+                        Text(text = project.description ?: stringResource(id = R.string.label_no_description_assigned), fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Gestor: $realManagerName", fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+
+                    // 👇 MAPEAMENTO SEGURO DA TRADUÇÃO DO GESTOR: Fora do LaunchedEffect para compilar sem quebras
+                    val translatedManagerName = when(realManagerName) {
+                        "A carregar..." -> stringResource(id = R.string.state_loading)
+                        "Desconhecido" -> stringResource(id = R.string.state_unknown)
+                        "Sem Gestor" -> stringResource(id = R.string.state_no_manager)
+                        "Erro" -> stringResource(id = R.string.state_error)
+                        "Sem Nome" -> stringResource(id = R.string.unnamed_user)
+                        else -> realManagerName
+                    }
+                    Text(text = stringResource(id = R.string.manager_prefix, translatedManagerName), fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                            Text(text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            val deadlineText = project.end_date ?: stringResource(id = R.string.no_deadline_short)
+                            Text(text = stringResource(id = R.string.label_project_deadline_prefix, deadlineText), color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                         Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                     }
@@ -249,29 +261,28 @@ fun ProjectDetailsScreen(
 
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    CustomFilterChip("Todas", selectedTab == "Todas") { selectedTab = "Todas" }
-                    CustomFilterChip("Andamento", selectedTab == "Andamento") { selectedTab = "Andamento" }
-                    CustomFilterChip("Concluído", selectedTab == "Concluído") { selectedTab = "Concluído" }
+                    CustomFilterChip(stringResource(id = R.string.all), selectedTab == "Todas") { selectedTab = "Todas" }
+                    CustomFilterChip(stringResource(id = R.string.filter_in_progress), selectedTab == "Andamento") { selectedTab = "Andamento" }
+                    CustomFilterChip(stringResource(id = R.string.completed), selectedTab == "Concluído") { selectedTab = "Concluído" }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
             if (projectTasks.isEmpty()) {
                 item {
-                    Text("Sem tarefas para apresentar.", color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(text = stringResource(id = R.string.task_empty_list), color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             } else {
                 items(projectTasks) { task ->
                     TaskItemCard(
                         title = task.title,
-                        time = task.due_date ?: "Sem data",
+                        time = task.due_date ?: stringResource(id = R.string.task_no_date),
                         onClick = { task.id?.let { onTaskClick(it) } }
                     )
                 }
             }
         }
 
-        // AGORA É SEMPRE VISÍVEL
         FloatingActionButton(
             onClick = { showCreateTaskModal = true },
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
@@ -279,7 +290,7 @@ fun ProjectDetailsScreen(
             contentColor = Color.White,
             shape = CircleShape
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Nova Tarefa", modifier = Modifier.size(32.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(32.dp))
         }
 
         if (showCreateTaskModal) {
@@ -320,10 +331,10 @@ fun ProjectDetailsScreen(
                             supabase.postgrest["projects"].update({ set("cover_url", finalUrlToSave) }) { filter { eq("id", projectId) } }
                             currentCover = newImage
                             showCoverScreen = false
-                            Toast.makeText(context, "Capa guardada na BD!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_cover_uploaded), Toast.LENGTH_SHORT).show()
                             viewModel.loadProjectDetails(projectId)
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
                         } finally {
                             isUploading = false
                         }
@@ -335,13 +346,13 @@ fun ProjectDetailsScreen(
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                title = { Text(text = "Eliminar Projeto", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
-                text = { Text(text = "Pretende mesmo eliminar este projeto?", fontSize = 15.sp, color = Color.DarkGray) },
+                title = { Text(text = stringResource(id = R.string.dialog_delete_project_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
+                text = { Text(text = stringResource(id = R.string.dialog_delete_project_text), fontSize = 15.sp, color = Color.DarkGray) },
                 confirmButton = {
-                    Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), shape = RoundedCornerShape(12.dp), onClick = { showDeleteDialog = false }) { Text("Sim", color = Color.White, fontWeight = FontWeight.Bold) }
+                    Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), shape = RoundedCornerShape(12.dp), onClick = { showDeleteDialog = false }) { Text(text = stringResource(id = R.string.btn_yes_short), color = Color.White, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar", color = Color.Gray) }
+                    TextButton(onClick = { showDeleteDialog = false }) { Text(text = stringResource(id = R.string.btn_close_short), color = Color.Gray) }
                 },
                 shape = RoundedCornerShape(24.dp),
                 containerColor = Color.White
@@ -401,25 +412,24 @@ fun CreateTaskBottomSheet(
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
-            Text(text = "Criar nova tarefa", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text(text = stringResource(id = R.string.task_create_title), fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, modifier = Modifier.align(Alignment.CenterHorizontally))
             Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Titulo da tarefa") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(id = R.string.task_label_title)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
             Spacer(modifier = Modifier.height(20.dp))
-            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(id = R.string.description)) }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(12.dp))
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- DATA ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Prazo-Limite", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.projectDeadline), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
                 }
                 Button(
                     onClick = { showDatePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
                     shape = RoundedCornerShape(20.dp), modifier = Modifier.height(36.dp)
-                ) { Text(if (selectedDateMillis == null) "Adicionar" else "Alterar", color = Color.White, fontSize = 13.sp) }
+                ) { Text(text = if (selectedDateMillis == null) stringResource(id = R.string.add) else stringResource(id = R.string.editData), color = Color.White, fontSize = 13.sp) }
             }
             if (selectedDateMillis != null) {
                 Text(text = uiDateFormat.format(Date(selectedDateMillis!!)), color = Color(0xFF1C61A2), fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
@@ -427,22 +437,21 @@ fun CreateTaskBottomSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- EQUIPA MULTI-SELEÇÃO ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.People, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Equipa", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.add_team_members_title), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
                 }
                 Box {
                     Button(
                         onClick = { expandedMenu = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
                         shape = RoundedCornerShape(20.dp), modifier = Modifier.height(36.dp)
-                    ) { Text(if (selectedMembers.isEmpty()) "Adicionar" else "Alterar", color = Color.White, fontSize = 13.sp) }
+                    ) { Text(text = if (selectedMembers.isEmpty()) stringResource(id = R.string.add) else stringResource(id = R.string.editData), color = Color.White, fontSize = 13.sp) }
 
                     DropdownMenu(expanded = expandedMenu, onDismissRequest = { expandedMenu = false }) {
                         if (teamMembers.isEmpty()) {
-                            DropdownMenuItem(text = { Text("Sem membros no projeto") }, onClick = { expandedMenu = false })
+                            DropdownMenuItem(text = { Text(stringResource(id = R.string.task_no_members)) }, onClick = { expandedMenu = false })
                         } else {
                             teamMembers.forEach { member ->
                                 val isSelected = selectedMembers.contains(member)
@@ -455,7 +464,7 @@ fun CreateTaskBottomSheet(
                                                 colors = CheckboxDefaults.colors(checkedColor = Color(0xFF1C61A2))
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text(member.full_name ?: member.username ?: "Utilizador")
+                                            Text(member.full_name ?: member.username ?: stringResource(id = R.string.user))
                                         }
                                     },
                                     onClick = {
@@ -472,7 +481,6 @@ fun CreateTaskBottomSheet(
                 }
             }
 
-            // --- MOSTRAR AVATARES COMO NO MOCKUP ---
             if (selectedMembers.isNotEmpty()) {
                 Row(
                     modifier = Modifier.padding(start = 32.dp, top = 12.dp),
@@ -483,7 +491,7 @@ fun CreateTaskBottomSheet(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Text(
-                        text = "- ${selectedMembers.size} Membros",
+                        text = stringResource(id = R.string.task_members_count_suffix, selectedMembers.size),
                         color = Color(0xFF1C61A2),
                         fontWeight = FontWeight.Medium,
                         fontSize = 15.sp
@@ -501,7 +509,7 @@ fun CreateTaskBottomSheet(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B5B84)),
                 shape = RoundedCornerShape(16.dp)
-            ) { Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+            ) { Text(text = stringResource(id = R.string.Confirm), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
             Spacer(modifier = Modifier.height(48.dp))
         }
     }
@@ -511,7 +519,7 @@ fun CreateTaskBottomSheet(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = { TextButton(onClick = { selectedDateMillis = datePickerState.selectedDateMillis; showDatePicker = false }) { Text("OK") } },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(text = stringResource(id = R.string.btn_close_short)) } }
         ) { DatePicker(state = datePickerState) }
     }
 }
@@ -528,7 +536,7 @@ fun OverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
                 contentAlignment = Alignment.Center
             ) {
                 if (!url.isNullOrEmpty() && url != "null") {
-                    AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
                 }
@@ -567,32 +575,32 @@ fun SetCoverScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.Gray, modifier = Modifier.size(32.dp)) }
-            Text(text = "Set Cover", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
-            TextButton(onClick = { selectedImage?.let { onSave(it) } }, enabled = selectedImage != null) { Text("Save", color = if (selectedImage != null) Color(0xFF1C61A2) else Color.LightGray, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+            IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp)) }
+            Text(text = stringResource(id = R.string.cover_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            TextButton(onClick = { selectedImage?.let { onSave(it) } }, enabled = selectedImage != null) { Text(text = stringResource(id = R.string.edit), color = if (selectedImage != null) Color(0xFF1C61A2) else Color.LightGray, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         }
 
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Escolha uma imagem da sua galeria", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
+            Text(text = stringResource(id = R.string.cover_gallery_section), fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
             Box(
                 modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF9F9F9)).border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp)).clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (selectedImage != null) AsyncImage(model = selectedImage, contentDescription = "Preview da Capa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                if (selectedImage != null) AsyncImage(model = selectedImage, contentDescription = stringResource(id = R.string.cover_content_desc), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(imageVector = Icons.Outlined.Image, contentDescription = "Adicionar Foto", tint = Color.LightGray, modifier = Modifier.size(48.dp))
+                    Icon(imageVector = Icons.Outlined.Image, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("+ Adicionar Foto", color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(id = R.string.cover_gallery_placeholder), color = Color.Gray, fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
-            Text(text = "Ou escolha um fundo do sistema", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
+            Text(text = stringResource(id = R.string.cover_system_section), fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
                 systemBackgrounds.forEach { drawableId ->
                     val isSelected = selectedImage == drawableId
                     Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).border(width = if (isSelected) 4.dp else 1.dp, color = if (isSelected) Color(0xFF1C61A2) else Color(0xFFE0E0E0), shape = RoundedCornerShape(12.dp)).clickable { selectedImage = drawableId }) {
-                        AsyncImage(model = drawableId, contentDescription = "Fundo do sistema", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        AsyncImage(model = drawableId, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
                 }
             }

@@ -24,11 +24,13 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.viewmodel.TaskDetailsViewModel
 import io.github.jan.supabase.gotrue.auth
@@ -38,7 +40,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
 
-// --- MODELO PARA A BASE DE DADOS ---
 @Serializable
 data class TaskRecordInsert(
     val task_id: Int,
@@ -75,11 +76,9 @@ fun TaskRecordFormScreen(
     var timeSpent by remember { mutableStateOf("") }
     var observations by remember { mutableStateOf("") }
 
-    // Estados para a foto e para o botão de guardar
     var selectedImage by remember { mutableStateOf<String?>(null) }
     var isSaving by remember { mutableStateOf(false) }
 
-    // Lançador da galeria
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -115,11 +114,11 @@ fun TaskRecordFormScreen(
                 verticalAlignment = Alignment.Top
             ) {
                 IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(40.dp))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Registo", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                    Text(text = "Adicionar informação à tarefa", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(text = stringResource(id = R.string.record_title), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(text = stringResource(id = R.string.record_subtitle), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.size(48.dp))
             }
@@ -128,14 +127,14 @@ fun TaskRecordFormScreen(
         // --- FORMULÁRIO ---
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
 
-            Text(text = task?.title ?: "A carregar...", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)
+            Text(text = task?.title ?: stringResource(id = R.string.state_loading), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = project?.name ?: "Projeto Desconhecido", fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+            Text(text = project?.name ?: stringResource(id = R.string.task_project_unknown), fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Progresso", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                Text(text = stringResource(id = R.string.pdf_th_progress), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 Text(text = "${(progress * 100).roundToInt()}%", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C61A2))
             }
             Slider(
@@ -146,7 +145,7 @@ fun TaskRecordFormScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "Localização", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(text = stringResource(id = R.string.pdf_th_location), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = location, onValueChange = { location = it }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
@@ -157,7 +156,7 @@ fun TaskRecordFormScreen(
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Data", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.pdf_th_date), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = date, onValueChange = { date = it }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
@@ -165,7 +164,7 @@ fun TaskRecordFormScreen(
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Tempo Dispensado", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.pdf_th_time), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = timeSpent, onValueChange = { timeSpent = it }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
@@ -176,7 +175,7 @@ fun TaskRecordFormScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "Observações", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(text = stringResource(id = R.string.pdf_th_observations), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = observations, onValueChange = { observations = it }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(12.dp),
@@ -185,7 +184,7 @@ fun TaskRecordFormScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(text = "Anexar Ficheiros", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(text = stringResource(id = R.string.form_attach_files), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
@@ -205,7 +204,7 @@ fun TaskRecordFormScreen(
                 if (selectedImage != null) {
                     AsyncImage(
                         model = selectedImage,
-                        contentDescription = "Preview",
+                        contentDescription = stringResource(id = R.string.cover_content_desc),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -213,12 +212,15 @@ fun TaskRecordFormScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = Color.Gray)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Clica para anexar uma foto", color = Color.Gray, fontWeight = FontWeight.Medium)
+                        Text(text = stringResource(id = R.string.form_attach_placeholder), color = Color.Gray, fontWeight = FontWeight.Medium)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
+
+            val txtAuthFailed = stringResource(id = R.string.error_auth_failed)
+            val txtRecordSaved = stringResource(id = R.string.toast_record_saved)
 
             Button(
                 onClick = {
@@ -227,10 +229,9 @@ fun TaskRecordFormScreen(
                     coroutineScope.launch {
                         isSaving = true
                         try {
-                            val userId = supabase.auth.currentUserOrNull()?.id ?: throw Exception("Utilizador não autenticado")
+                            val userId = supabase.auth.currentUserOrNull()?.id ?: throw Exception(txtAuthFailed)
                             var finalUrl: String? = null
 
-                            // 1. Faz upload da foto se existir
                             if (selectedImage != null) {
                                 val uri = android.net.Uri.parse(selectedImage)
                                 val inputStream = context.contentResolver.openInputStream(uri)
@@ -244,7 +245,6 @@ fun TaskRecordFormScreen(
                                 }
                             }
 
-                            // 2. Prepara os dados para a tabela
                             val progressoFinal = (progress * 100).roundToInt()
                             val novoRegisto = TaskRecordInsert(
                                 task_id = taskId,
@@ -257,7 +257,6 @@ fun TaskRecordFormScreen(
                                 photo_url = finalUrl
                             )
 
-                            // 3. Insere na tabela task_records
                             supabase.postgrest["task_records"].insert(novoRegisto)
 
                             supabase.postgrest["tasks"].update(
@@ -266,12 +265,12 @@ fun TaskRecordFormScreen(
                                 filter { eq("id", taskId) }
                             }
 
-                            Toast.makeText(context, "Registo guardado com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, txtRecordSaved, Toast.LENGTH_SHORT).show()
                             onBackClick()
 
                         } catch (e: Exception) {
                             android.util.Log.e("TaskRecord", "Erro a guardar: ${e.message}")
-                            Toast.makeText(context, "Erro a guardar: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, context.getString(R.string.error_save_record, e.message ?: ""), Toast.LENGTH_LONG).show()
                         } finally {
                             isSaving = false
                         }
@@ -284,7 +283,7 @@ fun TaskRecordFormScreen(
                 if (isSaving) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(id = R.string.Confirm), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
 

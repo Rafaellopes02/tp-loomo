@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +41,8 @@ fun ProjectDetailsUserScreen(
     viewModel: ProjectDetailsViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Todas") }
+
+    // 👇 REVERTIDO: A tua lógica original de carregamento em texto voltou a 100% aqui
     var realManagerName by remember { mutableStateOf("A carregar...") }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
@@ -102,7 +105,7 @@ fun ProjectDetailsUserScreen(
 
     if (project == null) {
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)), contentAlignment = Alignment.Center) {
-            Text("Projeto não encontrado", color = Color.Gray)
+            Text(text = stringResource(id = R.string.error_project_not_found), color = Color.Gray)
         }
         return
     }
@@ -121,7 +124,7 @@ fun ProjectDetailsUserScreen(
             ) {
                 if (currentCover != null) {
                     AsyncImage(
-                        model = currentCover, contentDescription = "Capa",
+                        model = currentCover, contentDescription = stringResource(id = R.string.cover_content_desc),
                         modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop
                     )
                 }
@@ -133,13 +136,13 @@ fun ProjectDetailsUserScreen(
                     verticalAlignment = Alignment.Top
                 ) {
                     IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(40.dp))
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Projeto", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                        Text(text = "Veja detalhes do projeto", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(text = stringResource(id = R.string.project_details_title), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(text = stringResource(id = R.string.project_details_subtitle), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
-                    Spacer(modifier = Modifier.size(48.dp)) // Mantém o título centrado
+                    Spacer(modifier = Modifier.size(48.dp))
                 }
 
                 Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp, end = 24.dp)) {
@@ -152,15 +155,26 @@ fun ProjectDetailsUserScreen(
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
                 Text(text = project.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = project.description ?: "Sem descrição.", fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
+                Text(text = project.description ?: stringResource(id = R.string.label_no_description_assigned), fontSize = 15.sp, color = Color.Gray, lineHeight = 22.sp)
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Gestor: $realManagerName", fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+
+                // 👇 MAPEAMENTO SEGURO DA TRADUÇÃO: Feito fora do LaunchedEffect na hora de desenhar o Text
+                val translatedManagerName = when(realManagerName) {
+                    "A carregar..." -> stringResource(id = R.string.state_loading)
+                    "Desconhecido" -> stringResource(id = R.string.state_unknown)
+                    "Sem Gestor" -> stringResource(id = R.string.state_no_manager)
+                    "Erro" -> stringResource(id = R.string.state_error)
+                    "Sem Nome" -> stringResource(id = R.string.unnamed_user)
+                    else -> realManagerName
+                }
+                Text(text = stringResource(id = R.string.manager_prefix, translatedManagerName), fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                        Text(text = "Prazo-Final: ${project.end_date ?: "Sem prazo"}", color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        val deadlineText = project.end_date ?: stringResource(id = R.string.no_deadline_short)
+                        Text(text = stringResource(id = R.string.label_project_deadline_prefix, deadlineText), color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 }
@@ -173,22 +187,22 @@ fun ProjectDetailsUserScreen(
 
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                CustomFilterChipUser("Todas", selectedTab == "Todas") { selectedTab = "Todas" }
-                CustomFilterChipUser("Andamento", selectedTab == "Andamento") { selectedTab = "Andamento" }
-                CustomFilterChipUser("Concluído", selectedTab == "Concluído") { selectedTab = "Concluído" }
+                CustomFilterChipUser(stringResource(id = R.string.all), selectedTab == "Todas") { selectedTab = "Todas" }
+                CustomFilterChipUser(stringResource(id = R.string.filter_in_progress), selectedTab == "Andamento") { selectedTab = "Andamento" }
+                CustomFilterChipUser(stringResource(id = R.string.completed), selectedTab == "Concluído") { selectedTab = "Concluído" }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         if (projectTasks.isEmpty()) {
             item {
-                Text("Sem tarefas para apresentar.", color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(text = stringResource(id = R.string.task_empty_list), color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         } else {
             items(projectTasks) { task ->
                 TaskItemCardUser(
                     title = task.title,
-                    time = task.due_date ?: "Sem data",
+                    time = task.due_date ?: stringResource(id = R.string.task_no_date),
                     onClick = { task.id?.let { onTaskClick(it) } }
                 )
             }
@@ -196,7 +210,6 @@ fun ProjectDetailsUserScreen(
     }
 }
 
-// Componentes extra reaproveitados (para não dar erro de ficheiro)
 @Composable
 fun TaskItemCardUser(title: String, time: String, onClick: () -> Unit = {}) {
     Card(
@@ -226,7 +239,7 @@ fun OverlappingAvatarsUser(avatarUrls: List<String?>, maxAvatars: Int = 3) {
         visibleAvatars.forEach { url ->
             Box(modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color(0xFFFFB74D)), contentAlignment = Alignment.Center) {
                 if (!url.isNullOrEmpty() && url != "null") {
-                    AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
                 }

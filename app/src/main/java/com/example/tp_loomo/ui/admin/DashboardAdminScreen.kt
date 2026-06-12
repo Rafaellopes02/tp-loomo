@@ -90,7 +90,7 @@ fun DashboardAdminScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
+                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -101,7 +101,7 @@ fun DashboardAdminScreen(
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )
-                Text(text = "Administrador", fontSize = 14.sp, color = Color.Gray)
+                Text(text = stringResource(id = R.string.admin), fontSize = 14.sp, color = Color.Gray)
             }
         }
 
@@ -140,7 +140,11 @@ fun DashboardAdminScreen(
         )
 
         Spacer(modifier = Modifier.height(12.dp))
-        AdminActionCard(icon = Icons.Outlined.TrendingUp, title = stringResource(id = R.string.exportStatistics), subtitle = stringResource(id = R.string.exportReports))
+        AdminActionCard(
+            icon = Icons.Outlined.TrendingUp,
+            title = stringResource(id = R.string.exportStatistics),
+            subtitle = stringResource(id = R.string.exportReports)
+        )
 
         Spacer(modifier = Modifier.height(80.dp))
     }
@@ -219,7 +223,7 @@ fun AddProjectBottomSheet(
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Prazo-Limite", fontSize = 16.sp, color = Color.Gray)
+                    Text(text = stringResource(id = R.string.projectDeadline), fontSize = 16.sp, color = Color.Gray)
                     deadline?.let {
                         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
                         Text(text = sdf.format(it.time), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
@@ -245,7 +249,7 @@ fun AddProjectBottomSheet(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
-                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.btn_add_short), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -260,7 +264,7 @@ fun AddProjectBottomSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Gestor do Projeto", fontSize = 16.sp, color = Color(0xFF4A4A4A))
+                    Text(text = stringResource(id = R.string.add_manager_title), fontSize = 16.sp, color = Color(0xFF4A4A4A))
                 }
                 Button(
                     onClick = { selectionType = SelectionType.MANAGER },
@@ -269,7 +273,7 @@ fun AddProjectBottomSheet(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
-                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.btn_add_short), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -288,8 +292,8 @@ fun AddProjectBottomSheet(
                         contentScale = ContentScale.Crop
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(selectedManager?.full_name ?: "Sem Nome", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(" - Gestor", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text(selectedManager?.full_name ?: stringResource(id = R.string.unnamed_user), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(id = R.string.role_manager_suffix), color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -303,7 +307,7 @@ fun AddProjectBottomSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Group, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Membros da Equipa", fontSize = 16.sp, color = Color(0xFF4A4A4A))
+                    Text(text = stringResource(id = R.string.add_team_members_title), fontSize = 16.sp, color = Color(0xFF4A4A4A))
                 }
                 Button(
                     onClick = { selectionType = SelectionType.TEAM },
@@ -312,24 +316,23 @@ fun AddProjectBottomSheet(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
-                    Text("Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.btn_add_short), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            // --- LÓGICA DE AVATARES EMPILHADOS ---
             if (selectedUsers.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp, start = 36.dp),
-                    horizontalArrangement = Arrangement.spacedBy((-12).dp) // O truque da sobreposição!
+                    horizontalArrangement = Arrangement.spacedBy((-12).dp)
                 ) {
                     selectedUsers.forEach { user ->
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, Color.White, CircleShape) // Borda branca para separar as imagens
+                                .border(2.dp, Color.White, CircleShape)
                                 .background(Color.LightGray)
-                                .clickable { selectedUsers.remove(user) }, // Continua a dar para remover se clicares neles aqui
+                                .clickable { selectedUsers.remove(user) },
                             contentAlignment = Alignment.Center
                         ) {
                             if (!user.avatar_url.isNullOrBlank()) {
@@ -353,7 +356,7 @@ fun AddProjectBottomSheet(
             Button(
                 onClick = {
                     if (title.isBlank() || selectedManager == null) {
-                        Toast.makeText(context, "Preencha o título e selecione um Gestor", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.error_fill_project_fields), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -368,11 +371,11 @@ fun AddProjectBottomSheet(
                         endDate = endDate,
                         teamIds = selectedUsers.map { it.id },
                         onSuccess = { safeTitle, safeDesc, dateForScreen ->
-                            Toast.makeText(context, "Projeto criado com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.project_created_success), Toast.LENGTH_SHORT).show()
                             onDismiss()
                             navController.navigate("projectDetails/$safeTitle/$safeDesc/$dateForScreen")
                         },
-                        onError = { Toast.makeText(context, "Erro: $it", Toast.LENGTH_LONG).show() }
+                        onError = { Toast.makeText(context, context.getString(R.string.error_generic, it), Toast.LENGTH_LONG).show() }
                     )
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -390,28 +393,23 @@ fun AddProjectBottomSheet(
         }
     }
 
-    // --- NOVA LÓGICA DE ABRIR O DIALOG ---
     if (selectionType != null) {
         UserSelectionDialog(
             type = selectionType!!,
             viewModel = viewModel,
-            // Enviamos a lista de quem já está selecionado para pintar de azul
             selectedIds = if (selectionType == SelectionType.MANAGER) listOfNotNull(selectedManager?.id) else selectedUsers.map { it.id },
             onDismiss = { selectionType = null },
             onUserSelected = { user ->
                 if (selectionType == SelectionType.MANAGER) {
-                    // Clica no mesmo -> Remove. Clica noutro -> Substitui
                     selectedManager = if (selectedManager?.id == user.id) null else user
-                    selectionType = null // Fecha logo porque só pode haver um gestor
+                    selectionType = null
                 } else {
-                    // Lógica Team: Clica no mesmo -> Remove. Clica num novo -> Adiciona.
                     val existingUser = selectedUsers.find { it.id == user.id }
                     if (existingUser != null) {
                         selectedUsers.remove(existingUser)
                     } else {
                         selectedUsers.add(user)
                     }
-                    // NOTA: Não mudamos o selectionType = null aqui! A janela não se fecha para poderes adicionar vários seguidos.
                 }
             }
         )
@@ -438,18 +436,18 @@ fun UserSelectionDialog(
         nameMatch || userMatch
     }
 
-    val modalTitle = if (type == SelectionType.MANAGER) "Selecionar Gestor" else "Selecionar Membro"
+    val modalTitle = if (type == SelectionType.MANAGER) stringResource(id = R.string.dialog_select_manager) else stringResource(id = R.string.dialog_select_member)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.btn_close_short)) } },
         title = { Text(modalTitle, fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Pesquisar...") },
+                    placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     shape = RoundedCornerShape(12.dp)
@@ -460,7 +458,7 @@ fun UserSelectionDialog(
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = Color(0xFF1C61A2))
                 } else if (filteredUsers.isEmpty()) {
-                    Text("Nenhum utilizador encontrado.", fontSize = 14.sp, color = Color.Gray)
+                    Text(stringResource(id = R.string.no_projects_found), fontSize = 14.sp, color = Color.Gray)
                 } else {
                     LazyColumn {
                         items(filteredUsers) { user ->
@@ -470,7 +468,7 @@ fun UserSelectionDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) Color(0xFFE3F2FD) else Color.Transparent) // Pinta de azul claro se já foi selecionado
+                                    .background(if (isSelected) Color(0xFFE3F2FD) else Color.Transparent)
                                     .clickable { onUserSelected(user) }
                                     .padding(vertical = 8.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -483,12 +481,11 @@ fun UserSelectionDialog(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(user.full_name ?: "Sem nome", fontWeight = FontWeight.Bold, color = Color.Black)
+                                    Text(user.full_name ?: stringResource(id = R.string.unnamed_user), fontWeight = FontWeight.Bold, color = Color.Black)
                                     Text("@${user.username ?: "user"}", fontSize = 12.sp, color = Color.Gray)
                                 }
-                                // Mostra o "certo" na lista
                                 if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = "Selecionado", tint = Color(0xFF1C61A2))
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF1C61A2))
                                 }
                             }
                         }
@@ -577,7 +574,7 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
             Button(
                 onClick = {
                     if (email.isBlank() || fullName.isBlank() || username.isBlank()) {
-                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.error_fill_all_fields), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     viewModel.handleCreateUser(
@@ -589,7 +586,7 @@ fun AddUserBottomSheet(onDismiss: () -> Unit, viewModel: AdminViewModel) {
                             Toast.makeText(context, context.getString(R.string.userCreated), Toast.LENGTH_SHORT).show()
                             onDismiss()
                         },
-                        onError = { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+                        onError = { Toast.makeText(context, context.getString(R.string.error_generic, it), Toast.LENGTH_LONG).show() }
                     )
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -640,7 +637,7 @@ fun RoleDropdown(selectedRole: String, onRoleSelected: (String) -> Unit) {
         "admin" to stringResource(id = R.string.admin)
     )
 
-    val displayRole = roles.find { it.first == selectedRole }?.second ?: "Selecione..."
+    val displayRole = roles.find { it.first == selectedRole }?.second ?: stringResource(id = R.string.dropdown_select_placeholder)
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(id = R.string.userType), fontSize = 14.sp, color = Color(0xFF4A4A4A))

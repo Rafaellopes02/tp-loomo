@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +40,6 @@ fun ProjectsAdminScreen(
     adminViewModel: AdminViewModel = viewModel()
 ) {
     var selectedFilter by remember { mutableStateOf("Todas") }
-    var showAddProjectModal by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         adminViewModel.loadAllProjects()
@@ -63,9 +63,9 @@ fun ProjectsAdminScreen(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            Text(text = "Todos Os Projetos", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            Text(text = stringResource(id = R.string.all_projects_admin_title), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Veja todos os projetos da app", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Text(text = stringResource(id = R.string.view_all_projects_admin_subtitle), fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -73,9 +73,9 @@ fun ProjectsAdminScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
-                FigmaFilterChip("Todas", selectedFilter == "Todas") { selectedFilter = "Todas" }
-                FigmaFilterChip("Andamento", selectedFilter == "Andamento") { selectedFilter = "Andamento" }
-                FigmaFilterChip("Concluidos", selectedFilter == "Concluidos") { selectedFilter = "Concluidos" }
+                FigmaFilterChip(stringResource(id = R.string.all), selectedFilter == "Todas") { selectedFilter = "Todas" }
+                FigmaFilterChip(stringResource(id = R.string.filter_in_progress), selectedFilter == "Andamento") { selectedFilter = "Andamento" }
+                FigmaFilterChip(stringResource(id = R.string.filter_completed), selectedFilter == "Concluidos") { selectedFilter = "Concluidos" }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -86,7 +86,7 @@ fun ProjectsAdminScreen(
                 }
             } else if (filteredProjects.isEmpty()) {
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(text = "Nenhum projeto encontrado.", color = Color.Gray)
+                    Text(text = stringResource(id = R.string.no_projects_found), color = Color.Gray)
                 }
             } else {
                 LazyColumn(
@@ -126,28 +126,27 @@ fun FigmaFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-// Estruturas de dados para ler os membros da BD em segurança
 @Serializable
 data class CardMemberRow(val user_id: String)
 
-// Atualiza a estrutura para ler também o nome!
 @Serializable
 data class CardProfileRow(val full_name: String? = null, val avatar_url: String? = null)
 
 @Composable
 fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
+    val txtLoading = stringResource(id = R.string.state_loading)
+    val txtUnknown = stringResource(id = R.string.state_unknown)
+    val txtNoManager = stringResource(id = R.string.state_no_manager)
+    val txtError = stringResource(id = R.string.state_error)
 
-    // --- ESTADOS 100% DINÂMICOS ---
-    var managerName by remember { mutableStateOf("A carregar...") }
+    var managerName by remember { mutableStateOf(txtLoading) }
     var projectAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
 
-    // --- DETETIVE (Vai buscar o Gestor E a Equipa) ---
     LaunchedEffect(project.id) {
-        managerName = "A carregar..."
+        managerName = txtLoading
         projectAvatars = emptyList()
 
         try {
-            // 1. Descobrir o Gestor
             var tempManagerAvatar: String? = null
             if (project.project_manager_id != null) {
                 val managerProfile = supabase.postgrest["profiles"]
@@ -156,16 +155,15 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                     }.decodeSingleOrNull<CardProfileRow>()
 
                 if (managerProfile != null) {
-                    managerName = managerProfile.full_name ?: "Sem Nome"
+                    managerName = managerProfile.full_name ?: txtUnknown
                     tempManagerAvatar = managerProfile.avatar_url
                 } else {
-                    managerName = "Desconhecido"
+                    managerName = txtUnknown
                 }
             } else {
-                managerName = "Sem Gestor"
+                managerName = txtNoManager
             }
 
-            // 2. Descobrir a Equipa
             val members = supabase.postgrest["project_members"]
                 .select(columns = Columns.list("user_id")) {
                     filter { eq("project_id", project.id) }
@@ -183,21 +181,18 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                 teamAvatars = profiles.map { it.avatar_url }
             }
 
-            // 3. Juntar tudo (Gestor em primeiro lugar, seguido da equipa)
             val combined = mutableListOf<String?>()
-            combined.add(tempManagerAvatar) // Adiciona o gestor (mesmo que não tenha foto, adiciona null para desenhar o boneco default)
+            combined.add(tempManagerAvatar)
             combined.addAll(teamAvatars)
 
-            // O "distinct()" remove fotos repetidas caso o gestor também esteja na tabela da equipa por engano
             projectAvatars = combined.distinct()
 
         } catch (e: Exception) {
-            managerName = "Erro"
-            projectAvatars = listOf(null) // Mostra um boneco de erro
+            managerName = txtError
+            projectAvatars = listOf(null)
         }
     }
 
-    // --- LÓGICA DE CAPAS ---
     val savedCoverInDb = project.cover_url
 
     val finalCoverImageUrl: Any = when {
@@ -231,7 +226,7 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
             ) {
                 AsyncImage(
                     model = finalCoverImageUrl,
-                    contentDescription = "Capa do Projeto",
+                    contentDescription = stringResource(id = R.string.cover_content_desc),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -247,7 +242,6 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 12.dp, end = 16.dp)
                 ) {
-                    // --- PASSA A LISTA COMPLETA E DINÂMICA ---
                     ProjectOverlappingAvatars(avatarUrls = projectAvatars)
                 }
             }
@@ -265,14 +259,13 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                         color = Color.Black,
                         maxLines = 1
                     )
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "Opções", tint = Color(0xFF1C61A2))
+                    Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(id = R.string.more_options_content_desc), tint = Color(0xFF1C61A2))
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // --- AGORA O NOME É DINÂMICO ---
                 Text(
-                    text = "Gestor: $managerName",
+                    text = stringResource(id = R.string.manager_prefix, managerName),
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium,
@@ -297,13 +290,15 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "5 tarefas pendentes", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
-                    Text(text = "3 concluídas", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32)) // Verde
+                    // Temporariamente mantidos os placeholders "5" e "3" estáticos, mas já prontos no idioma correto
+                    Text(text = stringResource(id = R.string.pending_tasks_count, 5), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
+                    Text(text = stringResource(id = R.string.completed_tasks_count, 3), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
                 }
             }
         }
     }
 }
+
 @Composable
 fun ProjectOverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
     val visibleAvatars = avatarUrls.take(maxAvatars)
@@ -316,14 +311,13 @@ fun ProjectOverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
                     .size(32.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
-                    .background(Color(0xFFFFB74D)), // Cor de fundo padrão se não houver foto
+                    .background(Color(0xFFFFB74D)),
                 contentAlignment = Alignment.Center
             ) {
-                // SE HOUVER UM LINK VÁLIDO, DESENHA A FOTO. SE NÃO, MOSTRA O BONECO BRANCO.
                 if (!url.isNullOrBlank() && url.startsWith("http")) {
                     AsyncImage(
                         model = url,
-                        contentDescription = "Avatar do membro",
+                        contentDescription = stringResource(id = R.string.porfile),
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )

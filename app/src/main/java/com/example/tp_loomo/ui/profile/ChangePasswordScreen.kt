@@ -36,14 +36,11 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val fieldBg = Color(0xFFF3F3F3)
-    val loomoBlue = Color(0xFF8FB1D0)
 
-    // VARIÁVEIS DAS PASSWORDS
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
-    // VARIÁVEIS DE VISIBILIDADE
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
@@ -68,13 +65,13 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
             IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
+                    contentDescription = stringResource(id = R.string.btn_close_short),
                     modifier = Modifier.size(32.dp)
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(id = R.string.newPassword), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(stringResource(id = R.string.changeYourPassword), fontSize = 16.sp, color = Color.Gray)
+                Text(text = stringResource(id = R.string.newPassword), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = stringResource(id = R.string.changeYourPassword), fontSize = 16.sp, color = Color.Gray)
             }
         }
 
@@ -84,12 +81,12 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
         TextField(
             value = newPassword,
             onValueChange = { newPassword = it },
-            placeholder = { Text(stringResource(id = R.string.enterNewPassword), color = Color.Gray) },
+            placeholder = { Text(text = stringResource(id = R.string.enterNewPassword), color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = Color.Gray) },
             trailingIcon = {
                 val image = if (newPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                 IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar/Esconder Senha", tint = Color.Gray)
+                    Icon(imageVector = image, contentDescription = stringResource(id = R.string.password_visibility_desc), tint = Color.Gray)
                 }
             },
             visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -110,12 +107,12 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
         TextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            placeholder = { Text(stringResource(id = R.string.repeatNewPassword), color = Color.Gray) },
+            placeholder = { Text(text = stringResource(id = R.string.repeatNewPassword), color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = Color.Gray) },
             trailingIcon = {
                 val image = if (confirmPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar/Esconder Senha", tint = Color.Gray)
+                    Icon(imageVector = image, contentDescription = stringResource(id = R.string.password_visibility_desc), tint = Color.Gray)
                 }
             },
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -186,7 +183,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text(stringResource(id = R.string.Confirm), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                Text(text = stringResource(id = R.string.Confirm), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.White)
             }
         }
     }

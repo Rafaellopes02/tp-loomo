@@ -19,11 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.ManagerViewModel
 import com.example.tp_loomo.viewmodel.ProfileViewModel
 import com.example.tp_loomo.viewmodel.ProjectUiModel
@@ -41,7 +43,6 @@ fun DashboardManagerScreen(
         profileViewModel.loadProfile()
     }
 
-// Recarrega o perfil quando o SyncWorker terminar (observa o WorkManager)
     LaunchedEffect(Unit) {
         androidx.work.WorkManager.getInstance(context)
             .getWorkInfosForUniqueWorkFlow("profile_sync_unique")
@@ -54,7 +55,6 @@ fun DashboardManagerScreen(
     }
 
     val userData = profileViewModel.userData
-    val projects = managerViewModel.managedProjects
     val isLoading = managerViewModel.isLoading
 
     Column(
@@ -79,38 +79,38 @@ fun DashboardManagerScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Outlined.Person, contentDescription = "Perfil", tint = Color.Gray)
+                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                val primeiroNome = userData?.nomeCompleto?.split(" ")?.first() ?: "Gestor"
+                val primeiroNome = userData?.nomeCompleto?.split(" ")?.first() ?: stringResource(id = R.string.manager)
                 Text(
-                    text = "Olá, $primeiroNome",
+                    text = stringResource(id = R.string.hello) + primeiroNome,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )
-                Text(text = "Bem-vindo de volta!", fontSize = 14.sp, color = Color.Gray)
+                // Reutiliza o teu "Bem-Vindo de Volta!"
+                Text(text = stringResource(id = R.string.login_subtitle), fontSize = 14.sp, color = Color.Gray)
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Cartões de Estatísticas (Placeholder)
-        // StatCards dinâmicos (substitui os hardcoded "8" e "10")
+        // Cartões de Estatísticas
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCard(
-                title = "Tarefas Pendentes",
+                title = stringResource(id = R.string.pending_tasks_stat),
                 value = managerViewModel.totalPending.toString(),
                 bgColor = Color(0xFF9EBAE1),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "Tarefas Concluídas",
+                title = stringResource(id = R.string.completed_tasks_stat),
                 value = managerViewModel.totalCompleted.toString(),
                 bgColor = Color(0xFF90D992),
                 textColor = Color(0xFF0AA20F),
@@ -126,13 +126,13 @@ fun DashboardManagerScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Meus Projetos",
+                text = stringResource(id = R.string.my_projects),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
             Text(
-                text = "Ver todas",
+                text = stringResource(id = R.string.see_all),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1C61A2)
@@ -141,15 +141,13 @@ fun DashboardManagerScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else if (managerViewModel.projectSummaries.isEmpty()) {
-            Text(text = "Ainda não tens projetos a teu cargo.", color = Color.Gray)
+            Text(text = stringResource(id = R.string.no_projects_assigned), color = Color.Gray)
         } else {
-
             managerViewModel.projectSummaries.forEach { summary ->
-                DashboardProjectCard( // <-- Chamamos o nosso novo cartão gémeo
+                DashboardProjectCard(
                     uiModel = ProjectUiModel(
                         project = summary.project,
                         avatars = summary.avatars,
@@ -163,12 +161,11 @@ fun DashboardManagerScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-
     }
 }
 
 @Composable
-fun StatCard(title: String, value: String, bgColor: Color,textColor: Color = Color(0xFF1C61A2), modifier: Modifier = Modifier) {
+fun StatCard(title: String, value: String, bgColor: Color, textColor: Color = Color(0xFF1C61A2), modifier: Modifier = Modifier) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
@@ -200,7 +197,6 @@ fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
     }
 
     Card(
-        // A ÚNICA DIFERENÇA: Removemos o padding horizontal de 24.dp para encaixar perfeitamente na Dashboard
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
@@ -215,12 +211,12 @@ fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(140.dp).background(Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
             ) {
                 if (currentCover != null) {
-                    AsyncImage(model = currentCover, contentDescription = "Capa", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    AsyncImage(model = currentCover, contentDescription = stringResource(id = R.string.cover_content_desc), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f)))
 
                 Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 16.dp)) {
-                    OverlappingAvatarsCard(avatarUrls = avatars) // Esta função vem do outro ficheiro, vai funcionar perfeitamente
+                    OverlappingAvatarsCard(avatarUrls = avatars)
                 }
             }
 
@@ -228,7 +224,7 @@ fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(text = project.name, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color.Gray)
+                    Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(id = R.string.more_options_content_desc), tint = Color.Gray)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -246,8 +242,18 @@ fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
 
                 // Rodapé com Tarefas Pendentes e Concluídas
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "${uiModel.pendingTasks} tarefas pendentes", color = Color(0xFF1C61A2), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "${uiModel.completedTasks} concluídas", color = Color(0xFF4CAF50), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(id = R.string.pending_tasks_count, uiModel.pendingTasks),
+                        color = Color(0xFF1C61A2),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(id = R.string.completed_tasks_count, uiModel.completedTasks),
+                        color = Color(0xFF4CAF50),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

@@ -12,9 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.ui.admin.stats.*
 import com.example.tp_loomo.ui.admin.stats.reports.*
@@ -103,7 +105,7 @@ fun StatsManagerScreen() {
             }
 
         } catch (e: Exception) {
-            Toast.makeText(context, "Erro a carregar estatísticas: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.error_load_stats, e.message ?: ""), Toast.LENGTH_LONG).show()
         } finally {
             isLoading = false
         }
@@ -121,13 +123,13 @@ fun StatsManagerScreen() {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Estatísticas",
+                text = stringResource(id = R.string.stats_title),
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
             )
             Text(
-                text = "Veja as estatísticas dos seus projetos",
+                text = stringResource(id = R.string.stats_subtitle),
                 fontSize = 18.sp,
                 color = Color.Gray
             )
@@ -138,9 +140,9 @@ fun StatsManagerScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
-                StatsFilterChip("Projetos", isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
-                StatsFilterChip("Tarefas", isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
-                StatsFilterChip("Utilizadores", isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
+                StatsFilterChip(stringResource(id = R.string.tab_projects), isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
+                StatsFilterChip(stringResource(id = R.string.tab_tasks), isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
+                StatsFilterChip(stringResource(id = R.string.tab_users), isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -157,7 +159,7 @@ fun StatsManagerScreen() {
                     when (selectedTab) {
                         "Projetos" -> {
                             if (projectsList.isEmpty()) {
-                                item { CenterEmptyMessage("Nenhum projeto encontrado.") }
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_projects_found)) }
                             } else {
                                 items(projectsList) { proj ->
                                     val projectTasks = tasksList.filter { it.project_id == proj.id }
@@ -166,12 +168,15 @@ fun StatsManagerScreen() {
 
                                     StatExportCard(
                                         title = proj.name,
-                                        subtitle = "${projectTasks.size} Tarefas - $allMembersCount Membros",
+                                        subtitle = stringResource(id = R.string.project_card_summary, projectTasks.size, allMembersCount),
                                         onDownloadClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 val manager = usersList.find { it.id == proj.project_manager_id }
                                                 val team = usersList.filter { teamIds.contains(it.id) }
+
+                                                // 👇 ADICIONADO O CONTEXT AQUI
                                                 val html = buildReportHtml(
+                                                    context = context,
                                                     project = proj,
                                                     tasks = projectTasks,
                                                     manager = manager,
@@ -189,13 +194,13 @@ fun StatsManagerScreen() {
 
                         "Tarefas" -> {
                             if (tasksList.isEmpty()) {
-                                item { CenterEmptyMessage("Nenhuma tarefa encontrada.") }
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_tasks_found)) }
                             } else {
                                 items(tasksList) { task ->
-                                    val projName = projectsList.find { it.id == task.project_id }?.name ?: "Projeto Apagado"
+                                    val projName = projectsList.find { it.id == task.project_id }?.name ?: stringResource(id = R.string.project_deleted)
                                     StatExportCard(
                                         title = task.title,
-                                        subtitle = "Projeto: $projName",
+                                        subtitle = stringResource(id = R.string.project_prefix, projName),
                                         onDownloadClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 try {
@@ -212,7 +217,9 @@ fun StatsManagerScreen() {
                                                         }
                                                         .decodeList<StatTaskRecord2>()
 
+                                                    // 👇 ADICIONADO O CONTEXT AQUI
                                                     val html = buildTaskReportHtml(
+                                                        context = context,
                                                         task = task,
                                                         projectName = projName,
                                                         assignedUsers = assigned,
@@ -220,7 +227,7 @@ fun StatsManagerScreen() {
                                                     )
                                                     exportTaskHtmlToPdf(context, html, task.title)
                                                 } catch (e: Exception) {
-                                                    Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
                                                 }
                                             }
                                         }
@@ -231,17 +238,17 @@ fun StatsManagerScreen() {
 
                         "Utilizadores" -> {
                             if (usersList.isEmpty()) {
-                                item { CenterEmptyMessage("Nenhum utilizador encontrado.") }
+                                item { CenterEmptyMessage(stringResource(id = R.string.no_projects_found)) }
                             } else {
                                 items(usersList) { user ->
                                     val roleLabel = when (user.role) {
-                                        "admin" -> "Administrador"
-                                        "project_manager" -> "Gestor de Projeto"
-                                        else -> "Membro da Equipa"
+                                        "admin" -> stringResource(id = R.string.admin)
+                                        "project_manager" -> stringResource(id = R.string.project_manager_role)
+                                        else -> stringResource(id = R.string.team_member_role)
                                     }
                                     StatExportCard(
-                                        title = user.full_name ?: "Sem Nome",
-                                        subtitle = "Cargo: $roleLabel",
+                                        title = user.full_name ?: stringResource(id = R.string.unnamed_user),
+                                        subtitle = stringResource(id = R.string.user_role_prefix, roleLabel),
                                         onDownloadClick = {
                                             coroutineScope.launch(Dispatchers.Main) {
                                                 try {
@@ -271,7 +278,9 @@ fun StatsManagerScreen() {
                                                         tasksList.any { it.id == r.task_id }
                                                     }
 
+                                                    // 👇 ADICIONADO O CONTEXT AQUI
                                                     val html = buildUserReportHtml(
+                                                        context = context,
                                                         user = user,
                                                         email = user.email,
                                                         avatarUrl = user.avatar_url,
@@ -283,7 +292,7 @@ fun StatsManagerScreen() {
                                                     )
                                                     exportUserHtmlToPdf(context, html, user.full_name ?: "user")
                                                 } catch (e: Exception) {
-                                                    Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
                                                 }
                                             }
                                         }

@@ -5,6 +5,7 @@ import android.print.PrintAttributes
 import android.print.PrintManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.example.tp_loomo.R
 import com.example.tp_loomo.ui.admin.stats.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,6 +24,7 @@ fun exportUserHtmlToPdf(context: Context, htmlContent: String, userName: String)
 }
 
 fun buildUserReportHtml(
+    context: Context, // <-- AGORA RECEBE O CONTEXT AQUI
     user: StatUser,
     email: String?,
     avatarUrl: String?,
@@ -32,12 +34,22 @@ fun buildUserReportHtml(
     records: List<StatTaskRecord2>,
     allTasks: List<StatTask>
 ): String {
-    val currentDate = SimpleDateFormat("dd MMMM yyyy · HH:mm", Locale("pt", "PT")).format(Date())
+    // Carregar textos traduzidos do strings.xml
+    val txtAdmin = context.getString(R.string.admin)
+    val txtProjectManager = context.getString(R.string.project_manager_role)
+    val txtTeamMember = context.getString(R.string.team_member_role)
+    val txtManagerLabelShort = context.getString(R.string.manager)
+    val txtMemberLabelShort = context.getString(R.string.user)
+    val txtPending = context.getString(R.string.pending_tasks_stat)
+    val txtCompleted = context.getString(R.string.completed)
+    val txtInProgress = context.getString(R.string.state_in_progress)
+
+    val currentDate = SimpleDateFormat("dd MMMM yyyy · HH:mm", Locale.getDefault()).format(Date())
 
     val roleLabel = when (user.role) {
-        "admin" -> "Administrador"
-        "project_manager" -> "Gestor de Projeto"
-        else -> "Membro da Equipa"
+        "admin" -> txtAdmin
+        "project_manager" -> txtProjectManager
+        else -> txtTeamMember
     }
     val roleColor = when (user.role) {
         "admin" -> "#6c3483"
@@ -50,7 +62,7 @@ fun buildUserReportHtml(
         else -> "#d1fae5"
     }
 
-    val name = user.full_name ?: "Sem Nome"
+    val name = user.full_name ?: context.getString(R.string.unnamed_user)
     val initials = name.split(" ").take(2).joinToString("") { it.take(1) }.uppercase()
 
     // KPIs
@@ -65,19 +77,19 @@ fun buildUserReportHtml(
     // Projetos HTML
     val allProjects = (memberProjects + managedProjects).distinctBy { it.id }
     val projectsHtml = if (allProjects.isEmpty()) {
-        "<p style='color:#8a96a8; font-size:13px;'>Sem projetos associados.</p>"
+        "<p style='color:#8a96a8; font-size:13px;'>${context.getString(R.string.pdf_user_no_projects)}</p>"
     } else {
         allProjects.joinToString("\n") { proj ->
             val isManager = managedProjects.any { it.id == proj.id }
             val projTasks = assignedTasks.count { it.project_id == proj.id }
-            val tagLabel = if (isManager) "Gestor" else "Membro"
+            val tagLabel = if (isManager) txtManagerLabelShort else txtMemberLabelShort
             val tagColor = if (isManager) "#1a3a5c" else "#1a7a6e"
             val tagBg = if (isManager) "#dbeafe" else "#d1fae5"
             """
             <div class="proj-row">
               <div>
                 <div class="proj-name">${proj.name}</div>
-                <div class="proj-sub">$projTasks tarefas atribuídas</div>
+                <div class="proj-sub">${context.getString(R.string.pdf_user_tasks_assigned_count, projTasks)}</div>
               </div>
               <span class="mini-badge" style="background:$tagBg; color:$tagColor;">$tagLabel</span>
             </div>
@@ -87,14 +99,14 @@ fun buildUserReportHtml(
 
     // Tarefas HTML
     val tasksHtml = if (assignedTasks.isEmpty()) {
-        "<tr><td colspan='4' style='text-align:center; color:#8a96a8; padding:20px;'>Sem tarefas atribuídas.</td></tr>"
+        "<tr><td colspan='5' style='text-align:center; color:#8a96a8; padding:20px;'>${context.getString(R.string.pdf_user_no_tasks)}</td></tr>"
     } else {
         assignedTasks.joinToString("\n") { task ->
             val projName = allTasks.firstOrNull()?.let { allProjects.find { p -> p.id == task.project_id }?.name } ?: "—"
             val statusLabel = when (task.status?.lowercase()) {
-                "completed" -> "Concluída"
-                "in_progress" -> "Em Progresso"
-                else -> "Pendente"
+                "completed" -> txtCompleted
+                "in_progress" -> txtInProgress
+                else -> txtPending
             }
             val tagClass = when (task.status?.lowercase()) {
                 "completed" -> "tag-concluido"
@@ -118,7 +130,7 @@ fun buildUserReportHtml(
 
     // Registos HTML
     val recordsHtml = if (records.isEmpty()) {
-        "<tr><td colspan='5' style='text-align:center; color:#8a96a8; padding:20px;'>Sem registos de trabalho.</td></tr>"
+        "<tr><td colspan='5' style='text-align:center; color:#8a96a8; padding:20px;'>${context.getString(R.string.pdf_no_records_message)}</td></tr>"
     } else {
         records.sortedByDescending { it.date }.joinToString("\n") { r ->
             val taskTitle = allTasks.find { it.id == r.task_id }?.title ?: "—"
@@ -213,7 +225,7 @@ fun buildUserReportHtml(
               <svg width="120" height="34" viewBox="0 0 120 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <text x="0" y="26" font-family="DM Serif Display, serif" font-size="28" fill="white" letter-spacing="-0.5">Loomo</text>
               </svg>
-              <span class="report-badge">Relatório de Utilizador</span>
+             <span class="report-badge">${'$'}{context.getString(R.string.pdf_user_report_badge)}</span>
             </div>
             <div class="user-hero">
               $avatarSection
@@ -225,73 +237,70 @@ fun buildUserReportHtml(
             </div>
             <div class="header-meta">
               <div class="meta-item">
-                <span class="meta-label">Data do Relatório</span>
+                <span class="meta-label">${context.getString(R.string.pdf_report_date)}</span>
                 <span class="meta-value">$currentDate</span>
               </div>
               <div class="meta-item">
-                <span class="meta-label">Projetos</span>
+                <span class="meta-label">${context.getString(R.string.projects)}</span>
                 <span class="meta-value">${allProjects.size}</span>
               </div>
               <div class="meta-item">
-                <span class="meta-label">Gerado por</span>
-                <span class="meta-value">Administrador</span>
+                <span class="meta-label">${context.getString(R.string.pdf_generated_by)}</span>
+                <span class="meta-value">$txtAdmin</span>
               </div>
             </div>
           </div>
 
-          <!-- KPIs -->
           <div class="kpi-row">
             <div class="kpi-box">
               <div class="kpi-number">$totalTasks</div>
-              <div class="kpi-label">Tarefas</div>
+              <div class="kpi-label">${context.getString(R.string.tasks)}</div>
             </div>
             <div class="kpi-box">
               <div class="kpi-number" style="color:#065f46;">$completedTasks</div>
-              <div class="kpi-label">Concluídas</div>
+              <div class="kpi-label">$txtCompleted</div>
             </div>
             <div class="kpi-box">
               <div class="kpi-number" style="color:#b07800;">$pendingTasks</div>
-              <div class="kpi-label">Pendentes</div>
+              <div class="kpi-label">$txtPending</div>
             </div>
             <div class="kpi-box">
               <div class="kpi-number">${if (totalHours > 0) "${totalHours}h" else "—"}</div>
-              <div class="kpi-label">Horas</div>
+              <div class="kpi-label">${context.getString(R.string.pdf_user_hours_stat)}</div>
             </div>
           </div>
 
-          <!-- DESEMPENHO + PROJETOS -->
           <div class="two-col">
             <div class="section-card">
-              <div class="section-title">Desempenho</div>
+              <div class="section-title">${context.getString(R.string.pdf_user_performance_title)}</div>
               <div class="progress-header">
-                <span class="progress-label">Taxa de conclusão</span>
+                <span class="progress-label">${context.getString(R.string.pdf_completion_rate)}</span>
                 <span class="progress-pct">$completionPct%</span>
               </div>
               <div class="progress-track">
                 <div class="progress-fill" style="width:$completionPct%;"></div>
               </div>
-              <div class="info-row"><span class="info-key">Em progresso</span><span class="info-val">$inProgressTasks</span></div>
-              <div class="info-row"><span class="info-key">Registos de trabalho</span><span class="info-val">$totalRecords</span></div>
-              <div class="info-row"><span class="info-key">Total de horas</span><span class="info-val">${if (totalHours > 0) "${totalHours}h" else "—"}</span></div>
+              <div class="info-row"><span class="info-key">$txtInProgress</span><span class="info-val">$inProgressTasks</span></div>
+              <div class="info-row"><span class="info-key">${context.getString(R.string.pdf_task_records_count)}</span><span class="info-val">$totalRecords</span></div>
+              <div class="info-row"><span class="info-key">${context.getString(R.string.totalProjects ?: R.string.activeTasks)}</span><span class="info-val">${if (totalHours > 0) "${totalHours}h" else "—"}</span></div>
             </div>
             <div class="section-card">
-              <div class="section-title">Projetos Associados</div>
+              <div class="section-title">${context.getString(R.string.pdf_user_associated_projects)}</div>
               $projectsHtml
             </div>
           </div>
 
-          <!-- TAREFAS -->
           <div class="section-card full-col">
-            <div class="section-title">Tarefas Atribuídas</div>
+            <div class="section-title">${context.getString(R.string.pdf_user_assigned_tasks)}</div>
             <div style="overflow-x:auto;">
               <table class="tasks-table">
                 <thead>
                   <tr>
-                    <th>Tarefa</th>
-                    <th>Projeto</th>
-                    <th>Prazo</th>
-                    <th>Progresso</th>
-                    <th>Estado</th>
+                    <th>${context.getString(R.string.pdf_th_task)}</th>
+                    <th>${context.getString(R.string.tab_projects)}</th>
+                    <th>${context.getString(R.string.pdf_th_deadline)}</th>
+                    <th>${context.getString(R.string.pdf_th_progress)}</th>
+                    <th>${context.getString(R.string.pdf_th_status)}</th>
                   </tr>
                 </thead>
                 <tbody>$tasksHtml</tbody>
@@ -299,18 +308,17 @@ fun buildUserReportHtml(
             </div>
           </div>
 
-          <!-- REGISTOS -->
           <div class="section-card full-col">
-            <div class="section-title">Historial de Registos de Trabalho</div>
+            <div class="section-title">${context.getString(R.string.pdf_task_history_title)}</div>
             <div style="overflow-x:auto;">
               <table class="records-table">
                 <thead>
                   <tr>
-                    <th>Data</th>
-                    <th>Tarefa</th>
-                    <th>Progresso</th>
-                    <th>Tempo</th>
-                    <th>Observações</th>
+                    <th>${context.getString(R.string.pdf_th_date)}</th>
+                    <th>${context.getString(R.string.pdf_th_task)}</th>
+                    <th>${context.getString(R.string.pdf_th_progress)}</th>
+                    <th>${context.getString(R.string.pdf_th_time)}</th>
+                    <th>${context.getString(R.string.pdf_th_observations)}</th>
                   </tr>
                 </thead>
                 <tbody>$recordsHtml</tbody>

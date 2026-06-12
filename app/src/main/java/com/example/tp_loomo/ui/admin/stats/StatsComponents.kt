@@ -3,6 +3,7 @@ package com.example.tp_loomo.ui.admin.stats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
@@ -19,7 +20,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.tp_loomo.R
 
 
 @Composable
@@ -77,13 +80,14 @@ fun StatExportCard(title: String, subtitle: String, onDownloadClick: () -> Unit)
             }
             Icon(
                 imageVector = Icons.Outlined.FileDownload,
-                contentDescription = "Exportar",
+                contentDescription = stringResource(id = R.string.exportStatistics),
                 tint = Color(0xFF1C61A2),
                 modifier = Modifier.size(40.dp)
             )
         }
     }
 }
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun StatsComponentsPreview() {
@@ -103,29 +107,29 @@ fun StatsComponentsPreview() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
         ) {
-            StatsFilterChip("Projetos", isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
-            StatsFilterChip("Tarefas", isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
-            StatsFilterChip("Utilizadores", isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
+            StatsFilterChip(stringResource(id = R.string.tab_projects), isSelected = selectedTab == "Projetos") { selectedTab = "Projetos" }
+            StatsFilterChip(stringResource(id = R.string.tab_tasks), isSelected = selectedTab == "Tarefas") { selectedTab = "Tarefas" }
+            StatsFilterChip(stringResource(id = R.string.tab_users), isSelected = selectedTab == "Utilizadores") { selectedTab = "Utilizadores" }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Cards consoante o tab selecionado
+        // Cards consoante o tab selecionado na Preview
         when (selectedTab) {
             "Projetos" -> {
-                StatExportCard(title = "Projeto Alpha", subtitle = "3 Tarefas - 2 Membros", onDownloadClick = {})
-                StatExportCard(title = "Projeto Beta", subtitle = "1 Tarefas - 1 Membros", onDownloadClick = {})
+                StatExportCard(title = "Projeto Alpha", subtitle = stringResource(id = R.string.project_card_summary, 3, 2), onDownloadClick = {})
+                StatExportCard(title = "Projeto Beta", subtitle = stringResource(id = R.string.project_card_summary, 1, 1), onDownloadClick = {})
             }
             "Tarefas" -> {
-                StatExportCard(title = "Tarefa 1", subtitle = "Projeto: Projeto Alpha", onDownloadClick = {})
-                StatExportCard(title = "Tarefa 2", subtitle = "Projeto: Projeto Alpha", onDownloadClick = {})
-                StatExportCard(title = "Tarefa 3", subtitle = "Projeto: Projeto Beta", onDownloadClick = {})
+                StatExportCard(title = "Tarefa 1", subtitle = stringResource(id = R.string.project_prefix, "Projeto Alpha"), onDownloadClick = {})
+                StatExportCard(title = "Tarefa 2", subtitle = stringResource(id = R.string.project_prefix, "Projeto Alpha"), onDownloadClick = {})
+                StatExportCard(title = "Tarefa 3", subtitle = stringResource(id = R.string.project_prefix, "Projeto Beta"), onDownloadClick = {})
             }
             "Utilizadores" -> {
-                StatExportCard(title = "Rafael Lopes", subtitle = "Cargo: Administrador", onDownloadClick = {})
-                StatExportCard(title = "Tiago Melo", subtitle = "Cargo: Gestor de Projeto", onDownloadClick = {})
-                StatExportCard(title = "Pablo Mendes", subtitle = "Cargo: Membro da Equipa", onDownloadClick = {})
-                CenterEmptyMessage("Sem mais utilizadores.")
+                StatExportCard(title = "Rafael Lopes", subtitle = stringResource(id = R.string.user_role_prefix, stringResource(id = R.string.admin)), onDownloadClick = {})
+                StatExportCard(title = "Tiago Melo", subtitle = stringResource(id = R.string.user_role_prefix, stringResource(id = R.string.project_manager_role)), onDownloadClick = {})
+                StatExportCard(title = "Pablo Mendes", subtitle = stringResource(id = R.string.user_role_prefix, stringResource(id = R.string.team_member_role)), onDownloadClick = {})
+                CenterEmptyMessage(stringResource(id = R.string.preview_no_more_users))
             }
         }
     }

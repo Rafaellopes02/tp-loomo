@@ -19,10 +19,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.TaskDetailsViewModel
 import kotlin.math.roundToInt
 
@@ -33,7 +35,6 @@ fun TaskDetailsUserScreen(
     onBackClick: () -> Unit,
     viewModel: TaskDetailsViewModel = viewModel()
 ) {
-    // Carrega a tarefa
     LaunchedEffect(taskId) {
         viewModel.loadTaskDetails(taskId)
     }
@@ -42,8 +43,7 @@ fun TaskDetailsUserScreen(
     val project = viewModel.project
     val isLoading = viewModel.isLoading
 
-    // --- ESTADOS DO FORMULÁRIO (Igual ao Mockup) ---
-    var progress by remember { mutableFloatStateOf(0.2f) } // Começa em 20%
+    var progress by remember { mutableFloatStateOf(0.2f) }
     var location by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var timeSpent by remember { mutableStateOf("") }
@@ -76,11 +76,11 @@ fun TaskDetailsUserScreen(
                 verticalAlignment = Alignment.Top
             ) {
                 IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(40.dp))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Tarefa", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                    Text(text = "Veja detalhes da tarefa", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(text = stringResource(id = R.string.task_details_title), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(text = stringResource(id = R.string.task_details_subtitle), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.size(48.dp))
             }
@@ -89,16 +89,15 @@ fun TaskDetailsUserScreen(
         // --- CONTEÚDO / FORMULÁRIO ---
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
 
-            // Títulos
-            Text(text = task?.title ?: "Carregando...", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)
+            Text(text = task?.title ?: stringResource(id = R.string.state_loading), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = project?.name ?: "Projeto Desconhecido", fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+            Text(text = project?.name ?: stringResource(id = R.string.task_project_unknown), fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // 1. Progresso
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Progresso", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                Text(text = stringResource(id = R.string.pdf_th_progress), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 Text(text = "${(progress * 100).roundToInt()}%", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C61A2))
             }
             Slider(
@@ -115,7 +114,7 @@ fun TaskDetailsUserScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2. Localização
-            Text(text = "Localização", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(text = stringResource(id = R.string.pdf_th_location), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = location, onValueChange = { location = it },
@@ -128,7 +127,7 @@ fun TaskDetailsUserScreen(
             // 3. Data e Tempo Dispensado
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Data", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.pdf_th_date), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = date, onValueChange = { date = it },
@@ -137,7 +136,7 @@ fun TaskDetailsUserScreen(
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Tempo Dispensado", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                    Text(text = stringResource(id = R.string.pdf_th_time), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = timeSpent, onValueChange = { timeSpent = it },
@@ -150,7 +149,7 @@ fun TaskDetailsUserScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 4. Observações
-            Text(text = "Observações", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(text = stringResource(id = R.string.pdf_th_observations), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = observations, onValueChange = { observations = it },
@@ -160,8 +159,8 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. Anexar Ficheiros (Caixa Tracejada)
-            Text(text = "Anexar Ficheiros", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            // 5. Anexar Ficheiros
+            Text(text = stringResource(id = R.string.form_attach_files), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
@@ -182,7 +181,7 @@ fun TaskDetailsUserScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = Color.Gray)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clica para anexar uma foto", color = Color.Gray, fontWeight = FontWeight.Medium)
+                    Text(text = stringResource(id = R.string.form_attach_placeholder), color = Color.Gray, fontWeight = FontWeight.Medium)
                 }
             }
 
@@ -191,14 +190,13 @@ fun TaskDetailsUserScreen(
             // 6. Botão Concluído
             Button(
                 onClick = {
-                    // Futuramente guarda os dados do log aqui
                     onBackClick()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C61A2)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Concluído", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = stringResource(id = R.string.Confirm), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
