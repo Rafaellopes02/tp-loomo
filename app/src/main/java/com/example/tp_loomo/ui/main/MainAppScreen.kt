@@ -92,7 +92,8 @@ fun MainAppScreen(
                         when (currentRole) {
                             "admin" -> DashboardAdminScreen(navController = navController)
                             "project_manager" -> DashboardManagerScreen(
-                                onProjectClick = { projectId -> navController.navigate("projectDetails/$projectId") }
+                                onProjectClick = { projectId -> navController.navigate("projectDetails/$projectId") },
+                                onViewAllProjectsClick = { onTabChange(1) }
                             )
                             else -> DashboardUserScreen(
                                 onProjectClick = { projectId -> navController.navigate("projectDetailsUser/$projectId") },
