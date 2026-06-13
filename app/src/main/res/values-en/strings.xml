@@ -117,6 +117,11 @@
     <string name="dialog_select_manager">Select Manager</string>
     <string name="dialog_select_member">Select Member</string>
     <string name="search_placeholder">Search…</string>
+    <string name="viewCompletedTasks">View your completed tasks</string>
+    <string name="searchTasksOrProjects">Search tasks or projects</string>
+    <string name="search">Search</string>
+    <string name="noCompletedTasks">No completed tasks to show.</string>
+    <string name="more">More</string>
     <string name="error_fill_all_fields">Fill in all the fields</string>
     <string name="error_fill_project_fields">Fill in the title and select a Manager</string>
     <string name="project_created_success">Project created successfully!</string>

@@ -17,10 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.HistoryTaskUiModel
 import com.example.tp_loomo.viewmodel.HistoryUserViewModel
 
@@ -60,9 +62,9 @@ fun HistoryUserScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Histórico", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(text = stringResource(id = R.string.nav_history), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Veja as tarefas concluídas", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                Text(text = stringResource(id = R.string.viewCompletedTasks), fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -73,8 +75,8 @@ fun HistoryUserScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                placeholder = { Text("Pesquisar tarefas ou projetos", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Pesquisar", tint = Color.Gray) },
+                placeholder = { Text(stringResource(id = R.string.searchTasksOrProjects), color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = stringResource(id = R.string.search), tint = Color.Gray) },
                 singleLine = true,
                 shape = RoundedCornerShape(28.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -91,7 +93,7 @@ fun HistoryUserScreen(
         if (filteredList.isEmpty()) {
             item {
                 Text(
-                    text = "Sem tarefas concluídas para mostrar.",
+                    text = stringResource(id = R.string.noCompletedTasks),
                     color = Color.Gray,
                     modifier = Modifier.fillMaxWidth().padding(32.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -152,7 +154,7 @@ fun HistoryTaskCard(item: HistoryTaskUiModel) {
                     Text(text = item.projectName, fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
                 }
 
-                Icon(Icons.Default.MoreHoriz, contentDescription = "Mais", tint = Color(0xFF1C61A2))
+                Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(id = R.string.more), tint = Color(0xFF1C61A2))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
