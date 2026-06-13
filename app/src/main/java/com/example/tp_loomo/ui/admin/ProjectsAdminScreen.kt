@@ -51,10 +51,9 @@ fun ProjectsAdminScreen(
 
     val filteredProjects = projects.filter { project ->
         val progress = progressMap[project.id] ?: 0
-        val status = project.status?.lowercase()
         when (selectedFilter) {
-            "Andamento" -> progress < 100 && status != "completed" && status != "concluded"
-            "Concluidos" -> progress == 100 || status == "completed" || status == "concluded"
+            "Andamento" -> progress > 0 && progress < 100
+            "Concluidos" -> progress == 100
             else -> true
         }
     }
