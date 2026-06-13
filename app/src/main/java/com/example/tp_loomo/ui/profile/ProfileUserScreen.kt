@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
@@ -60,7 +61,12 @@ fun ProfileUserScreen(
             contentAlignment = Alignment.Center
         ) {
             if (!userData?.avatarUrl.isNullOrEmpty()) {
-                AsyncImage(model = userData?.avatarUrl, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                AsyncImage(
+                    model = avatarDbValueToResource(userData?.avatarUrl),
+                    contentDescription = stringResource(id = R.string.porfile),
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
             } else {
                 Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color.LightGray)
             }
@@ -87,7 +93,12 @@ fun ProfileUserScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
         OutlinedButton(
-            onClick = { viewModel.logout(onLogout) },
+            onClick = {
+                viewModel.logout {
+                    viewModel.reset()
+                    onLogout()
+                }
+            },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),

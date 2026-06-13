@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.model.Project
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import com.example.tp_loomo.viewmodel.UserViewModel
 
 @Composable
@@ -64,12 +65,14 @@ fun DashboardUserScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar
+                // Avatar
                 Box(
                     modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (user?.avatar_url != null) {
-                        AsyncImage(model = user.avatar_url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    val avatarResource = avatarDbValueToResource(user?.avatar_url)
+                    if (avatarResource != null) {
+                        AsyncImage(model = avatarResource, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     } else {
                         Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
                     }

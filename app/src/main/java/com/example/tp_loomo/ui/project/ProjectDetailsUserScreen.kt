@@ -30,6 +30,7 @@ import com.example.tp_loomo.R
 import com.example.tp_loomo.ui.admin.CardProfileRow
 import com.example.tp_loomo.viewmodel.ProjectDetailsViewModel
 import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 
@@ -248,7 +249,7 @@ fun OverlappingAvatarsUser(avatarUrls: List<String?>, maxAvatars: Int = 3) {
         visibleAvatars.forEach { url ->
             Box(modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color(0xFFFFB74D)), contentAlignment = Alignment.Center) {
                 if (!url.isNullOrEmpty() && url != "null") {
-                    AsyncImage(model = url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = avatarDbValueToResource(url), contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
                 }

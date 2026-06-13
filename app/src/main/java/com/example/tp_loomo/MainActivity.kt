@@ -89,8 +89,9 @@ class MainActivity : ComponentActivity() {
                             currentTab = currentTab,
                             onTabChange = { currentTab = it },
                             onLogout = {
+                                currentTab = 0
                                 navController.navigate("login") {
-                                    popUpTo(0)
+                                    popUpTo(0) { inclusive = true }
                                 }
                             },
                             onEditProfile = { navController.navigate("editProfile") },

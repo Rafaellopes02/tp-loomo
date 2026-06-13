@@ -29,6 +29,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import com.example.tp_loomo.viewmodel.TaskDetailsViewModel
 import com.example.tp_loomo.viewmodel.TaskRecordUiModel
 
@@ -180,7 +181,7 @@ fun UserRecordCard(uiModel: TaskRecordUiModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFFFB74D)), contentAlignment = Alignment.Center) {
                         if (!profile?.avatar_url.isNullOrEmpty()) {
-                            AsyncImage(model = profile?.avatar_url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                            AsyncImage(model = avatarDbValueToResource(profile?.avatar_url), contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                         } else {
                             Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White)
                         }

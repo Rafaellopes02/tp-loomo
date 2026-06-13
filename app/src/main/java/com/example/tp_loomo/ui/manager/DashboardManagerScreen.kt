@@ -29,6 +29,7 @@ import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.ManagerViewModel
 import com.example.tp_loomo.viewmodel.ProfileViewModel
 import com.example.tp_loomo.viewmodel.ProjectUiModel
+import com.example.tp_loomo.utils.avatarDbValueToResource
 
 @Composable
 fun DashboardManagerScreen(
@@ -74,7 +75,7 @@ fun DashboardManagerScreen(
             ) {
                 if (!userData?.avatarUrl.isNullOrEmpty()) {
                     AsyncImage(
-                        model = userData?.avatarUrl,
+                        model = avatarDbValueToResource(userData?.avatarUrl),
                         contentDescription = "Avatar",
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
@@ -213,7 +214,12 @@ fun DashboardProjectCard(uiModel: ProjectUiModel, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(140.dp).background(Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8))))
             ) {
                 if (currentCover != null) {
-                    AsyncImage(model = currentCover, contentDescription = stringResource(id = R.string.cover_content_desc), modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    AsyncImage(
+                        model = currentCover,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f)))
 

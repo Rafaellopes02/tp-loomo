@@ -29,7 +29,12 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     fun logout(onLogoutSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.signOut()
+            userData = null
             onLogoutSuccess()
         }
+    }
+
+    fun reset() {
+        userData = null
     }
 }

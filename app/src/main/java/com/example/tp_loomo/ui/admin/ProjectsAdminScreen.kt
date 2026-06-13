@@ -29,6 +29,7 @@ import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.Project
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import com.example.tp_loomo.viewmodel.AdminViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -330,9 +331,10 @@ fun ProjectOverlappingAvatars(avatarUrls: List<String?>, maxAvatars: Int = 3) {
                     .background(Color(0xFFFFB74D)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!url.isNullOrBlank() && url.startsWith("http")) {
+                val resource = avatarDbValueToResource(url)
+                if (resource != null) {
                     AsyncImage(
-                        model = url,
+                        model = resource,
                         contentDescription = stringResource(id = R.string.porfile),
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop

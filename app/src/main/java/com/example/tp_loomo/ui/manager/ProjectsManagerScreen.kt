@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tp_loomo.R
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import com.example.tp_loomo.viewmodel.ProjectUiModel
 import com.example.tp_loomo.viewmodel.ProjectsManagerViewModel
 
@@ -207,7 +208,7 @@ fun OverlappingAvatarsCard(avatarUrls: List<String?>, maxAvatars: Int = 3) {
         visibleAvatars.forEach { url ->
             Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFFFB74D)), contentAlignment = Alignment.Center) {
                 if (!url.isNullOrEmpty() && url != "null") {
-                    AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = avatarDbValueToResource(url), contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }

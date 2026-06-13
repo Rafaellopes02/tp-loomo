@@ -29,6 +29,7 @@ import com.example.tp_loomo.R
 import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.ui.profile.EditProfileScreen
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import com.example.tp_loomo.viewmodel.AdminViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -167,7 +168,7 @@ fun UserCard(user: UserProfile, onClick: () -> Unit) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) {
                 if (!user.avatar_url.isNullOrEmpty() && user.avatar_url != "null") {
-                    AsyncImage(model = user.avatar_url, contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    AsyncImage(model = avatarDbValueToResource(user.avatar_url), contentDescription = stringResource(id = R.string.porfile), modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray)
                 }

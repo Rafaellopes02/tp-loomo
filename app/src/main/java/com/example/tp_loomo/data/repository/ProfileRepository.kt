@@ -119,6 +119,7 @@ class ProfileRepository(private val context: Context) {
     }
 
     suspend fun signOut() {
+        prefs.edit().clear().apply()
         supabase.auth.signOut()
     }
 }

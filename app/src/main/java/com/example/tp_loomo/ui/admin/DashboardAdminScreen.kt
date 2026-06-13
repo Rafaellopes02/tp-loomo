@@ -36,6 +36,7 @@ import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.viewmodel.AdminViewModel
 import io.github.jan.supabase.gotrue.auth
 import com.example.tp_loomo.data.remote.api.supabase
+import com.example.tp_loomo.utils.avatarDbValueToResource
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -96,7 +97,7 @@ fun DashboardAdminScreen(
             ) {
                 if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
                     AsyncImage(
-                        model = avatarUrl,
+                        model = avatarDbValueToResource(avatarUrl),
                         contentDescription = stringResource(id = R.string.porfile),
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
@@ -296,7 +297,7 @@ fun AddProjectBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
-                        model = selectedManager?.avatar_url,
+                        model = avatarDbValueToResource(selectedManager?.avatar_url),
                         contentDescription = null,
                         modifier = Modifier.size(40.dp).clip(CircleShape).border(2.dp, Color.White, CircleShape).background(Color.LightGray).clickable {
                             selectedManager = null
@@ -349,7 +350,7 @@ fun AddProjectBottomSheet(
                         ) {
                             if (!user.avatar_url.isNullOrBlank()) {
                                 AsyncImage(
-                                    model = user.avatar_url,
+                                    model = avatarDbValueToResource(user.avatar_url),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                                     contentScale = ContentScale.Crop
@@ -486,7 +487,7 @@ fun UserSelectionDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 AsyncImage(
-                                    model = user.avatar_url,
+                                    model = avatarDbValueToResource(user.avatar_url),
                                     contentDescription = null,
                                     modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray),
                                     contentScale = ContentScale.Crop
