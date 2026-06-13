@@ -3,10 +3,13 @@ package com.example.tp_loomo.viewmodel
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tp_loomo.data.remote.api.supabase
 import com.example.tp_loomo.data.remote.model.Project
 import com.example.tp_loomo.data.repository.AdminRepository
 import com.example.tp_loomo.data.remote.model.UserProfile
 import com.example.tp_loomo.data.repository.ProjectRepository
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
 
 class AdminViewModel : ViewModel() {
@@ -21,6 +24,10 @@ class AdminViewModel : ViewModel() {
     var projectProgressMap by mutableStateOf<Map<Int, Int>>(emptyMap())
         private set
 
+   // Guarda o número total real de pessoas registadas
+    var totalSystemUsers by mutableIntStateOf(0)
+        private set
+
     fun loadAllProjects() {
         viewModelScope.launch {
             isLoading = true
@@ -32,7 +39,7 @@ class AdminViewModel : ViewModel() {
                 for (project in projects) {
                     val tasks = projectRepository.getProjectTasks(project.id)
                     val totalTasks = tasks.size
-                    val completedTasks = tasks.count { it.status == "completed" || it.completion_rate == 100 }
+                    val completedTasks = tasks.count { it.status?.lowercase() in listOf("completed", "concluída", "concluido") || it.completion_rate == 100 }
                     progressMap[project.id] = if (totalTasks > 0) {
                         ((completedTasks.toFloat() / totalTasks) * 100).toInt()
                     } else {
@@ -45,6 +52,21 @@ class AdminViewModel : ViewModel() {
                 projectProgressMap = emptyMap()
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    // Vai à BD contar TODA a gente (sem filtrar por cargos)
+    fun loadTotalUsersCount() {
+        viewModelScope.launch {
+            try {
+                // Traz apenas os IDs para ser ultra-rápido e leve
+                val allUsers = supabase.postgrest["profiles"]
+                    .select(columns = Columns.list("id"))
+                    .decodeList<UserProfile>()
+                totalSystemUsers = allUsers.size
+            } catch (e: Exception) {
+                totalSystemUsers = 0
             }
         }
     }
@@ -63,6 +85,7 @@ class AdminViewModel : ViewModel() {
             }
         }
     }
+
     fun handleCreateUser(
         email: String, fullName: String, username: String, role: String,
         onSuccess: () -> Unit, onError: (String) -> Unit

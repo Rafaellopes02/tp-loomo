@@ -56,7 +56,7 @@ fun DashboardAdminScreen(
     // Chamada inicial para atualizar os dados reais vindo da BD
     LaunchedEffect(Unit) {
         adminViewModel.loadAllProjects()
-        adminViewModel.loadUsersForSelection(false)
+        adminViewModel.loadTotalUsersCount()
 
         coroutineScope.launch {
             try {
@@ -75,12 +75,13 @@ fun DashboardAdminScreen(
 
     // --- CÁLCULO DINÂMICO DOS DADOS DOS CARDS ---
     val totalProjectsCount = adminViewModel.allProjectsList.size
-    val totalUsersCount = adminViewModel.usersList.size
+
+    // 👇 USA O NOVO VALOR DO VIEWMODEL QUE TEM O TOTAL REAL
+    val totalUsersCount = adminViewModel.totalSystemUsers
 
     // Filtros calculados dinamicamente com base no status guardado na BD
     val activeTasksCount = adminViewModel.allProjectsList.count { it.status == "active" || it.status == "pending" }
     val completedProjectsCount = adminViewModel.allProjectsList.count { it.status == "concluded" || it.status == "completed" }
-
     Column(
         modifier = Modifier
             .fillMaxSize()

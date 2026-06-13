@@ -98,7 +98,6 @@ fun ProjectsAdminScreen(
                     contentPadding = PaddingValues(bottom = 100.dp, start = 24.dp, end = 24.dp)
                 ) {
                     items(filteredProjects) { project ->
-                        // 👇 PASSADOS OS DADOS REAIS DE PROGRESSO DO MAPA DO VIEWMODEL
                         val currentProgress = progressMap[project.id] ?: 0
 
                         AdminProjectListCard(
@@ -139,10 +138,14 @@ data class CardMemberRow(val user_id: String)
 @Serializable
 data class CardProfileRow(val full_name: String? = null, val avatar_url: String? = null)
 
+// 👇 NOVA DATA CLASS PARA LER AS TAREFAS DE FORMA LEVE
+@Serializable
+data class CardTaskRow(val status: String? = null, val completion_rate: Int? = null)
+
 @Composable
 fun AdminProjectListCard(
     project: Project,
-    progress: Int, // 👇 RECEBE O PROGRESSO REAL DA BD
+    progress: Int,
     onClick: () -> Unit
 ) {
     val txtLoading = stringResource(id = R.string.state_loading)
@@ -153,15 +156,18 @@ fun AdminProjectListCard(
     var managerName by remember { mutableStateOf(txtLoading) }
     var projectAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
 
-    // Contadores simulados dinamicamente com base no progresso real para preencher o rodapé
-    val completedCount = if (progress == 100) 4 else (progress / 25).coerceAtLeast(0)
-    val pendingCount = (4 - completedCount).coerceAtLeast(0)
+    // 👇 ESTADOS REAIS PARA AS TAREFAS EM VEZ DA MATEMÁTICA SIMULADA
+    var completedCount by remember { mutableIntStateOf(0) }
+    var pendingCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(project.id) {
         managerName = txtLoading
         projectAvatars = emptyList()
+        completedCount = 0
+        pendingCount = 0
 
         try {
+            // 1. CARREGAR GESTOR
             var tempManagerAvatar: String? = null
             if (project.project_manager_id != null) {
                 val managerProfile = supabase.postgrest["profiles"]
@@ -179,6 +185,7 @@ fun AdminProjectListCard(
                 managerName = txtNoManager
             }
 
+            // 2. CARREGAR EQUIPA
             val members = supabase.postgrest["project_members"]
                 .select(columns = Columns.list("user_id")) {
                     filter { eq("project_id", project.id) }
@@ -202,9 +209,24 @@ fun AdminProjectListCard(
 
             projectAvatars = combined.distinct()
 
+            // 3. 👇 CARREGAR E CONTAR TAREFAS REAIS DA BASE DE DADOS
+            val tasks = supabase.postgrest["tasks"]
+                .select(columns = Columns.list("status", "completion_rate")) {
+                    filter { eq("project_id", project.id) }
+                }.decodeList<CardTaskRow>()
+
+            val totalTasks = tasks.size
+            val completed = tasks.count {
+                it.status?.lowercase() in listOf("completed", "concluded", "concluída", "concluido") || it.completion_rate == 100
+            }
+            completedCount = completed
+            pendingCount = totalTasks - completed
+
         } catch (e: Exception) {
             managerName = txtError
             projectAvatars = listOf(null)
+            completedCount = 0
+            pendingCount = 0
         }
     }
 
@@ -289,20 +311,18 @@ fun AdminProjectListCard(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 👇 PERCENTAGEM EM TEXTO RE REAL DA BD
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Text(text = "$progress%", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // 👇 BARRA DE PROGRESSO DINÂMICA
                 Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFEEEEEE))) {
                     Box(modifier = Modifier.fillMaxWidth(progress / 100f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color(0xFF1C61A2)))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 👇 CONTADORES REAIS NO IDIOMA CORRETO
+                // AS TAREFAS AGORA SÃO 100% REAIS E DINÂMICAS!
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

@@ -46,7 +46,7 @@ fun ProjectsManagerScreen(
     // --- LÓGICA DE FILTRAGEM (BASEADA APENAS NO PROGRESSO) ---
     val filteredProjects = projectsList.filter {
         when (selectedFilter) {
-            "Andamento" -> it.progress > 0 && it.progress < 100
+            "Andamento" -> it.progress < 100
             "Concluidos" -> it.progress == 100
             else -> true
         }
