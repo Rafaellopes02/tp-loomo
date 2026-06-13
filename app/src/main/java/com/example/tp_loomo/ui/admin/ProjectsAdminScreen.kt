@@ -46,12 +46,15 @@ fun ProjectsAdminScreen(
     }
 
     val projects = adminViewModel.allProjectsList
+    val progressMap = adminViewModel.projectProgressMap
     val isLoading = adminViewModel.isLoading
 
     val filteredProjects = projects.filter { project ->
+        val progress = progressMap[project.id] ?: 0
+        val status = project.status?.lowercase()
         when (selectedFilter) {
-            "Andamento" -> project.status == "active"
-            "Concluidos" -> project.status == "concluded"
+            "Andamento" -> progress < 100 && status != "completed" && status != "concluded"
+            "Concluidos" -> progress == 100 || status == "completed" || status == "concluded"
             else -> true
         }
     }
