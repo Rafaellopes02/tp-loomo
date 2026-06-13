@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tp_loomo.R
 
 data class BottomNavItem(val title: String, val icon: ImageVector)
 
@@ -28,26 +30,34 @@ fun FloatingBottomNavBar(
 ) {
     val loomoBlue = Color(0xFF1C61A2)
     val lightBlue = Color(0xFFD0E0F0)
+    val navHome = stringResource(id = R.string.nav_home)
+    val navProjects = stringResource(id = R.string.projects)
+    val navStats = stringResource(id = R.string.stats_title)
+    val navUsers = stringResource(id = R.string.users)
+    val navProfile = stringResource(id = R.string.porfile)
+    val navTasks = stringResource(id = R.string.tasks)
+    val navHistory = stringResource(id = R.string.nav_history)
+
     val navItems = when (currentRole) {
         "admin" -> listOf(
-            BottomNavItem("Home", Icons.Outlined.Home),
-            BottomNavItem("Projetos", Icons.Outlined.Layers),
-            BottomNavItem("Estatísticas", Icons.Outlined.TrendingUp),
-            BottomNavItem("Utilizadores", Icons.Outlined.People),
-            BottomNavItem("Perfil", Icons.Outlined.Person)
+            BottomNavItem(navHome, Icons.Outlined.Home),
+            BottomNavItem(navProjects, Icons.Outlined.Layers),
+            BottomNavItem(navStats, Icons.Outlined.TrendingUp),
+            BottomNavItem(navUsers, Icons.Outlined.People),
+            BottomNavItem(navProfile, Icons.Outlined.Person)
         )
         "project_manager" -> listOf(
-            BottomNavItem("Home", Icons.Outlined.Home),
-            BottomNavItem("Projetos", Icons.Outlined.Layers),
-            BottomNavItem("Estatísticas", Icons.Outlined.TrendingUp),
-            BottomNavItem("Perfil", Icons.Outlined.Person)
+            BottomNavItem(navHome, Icons.Outlined.Home),
+            BottomNavItem(navProjects, Icons.Outlined.Layers),
+            BottomNavItem(navStats, Icons.Outlined.TrendingUp),
+            BottomNavItem(navProfile, Icons.Outlined.Person)
         )
         else -> listOf(
             // Lista padrão (Utilizador Normal / "user")
-            BottomNavItem("Home", Icons.Outlined.Home),
-            BottomNavItem("Tarefas", Icons.Outlined.Layers),
-            BottomNavItem("Histórico", Icons.Outlined.DateRange),
-            BottomNavItem("Perfil", Icons.Outlined.Person)
+            BottomNavItem(navHome, Icons.Outlined.Home),
+            BottomNavItem(navTasks, Icons.Outlined.Layers),
+            BottomNavItem(navHistory, Icons.Outlined.DateRange),
+            BottomNavItem(navProfile, Icons.Outlined.Person)
         )
     }
 
