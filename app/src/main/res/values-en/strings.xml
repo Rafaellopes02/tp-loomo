@@ -27,6 +27,8 @@
     <string name="viewPorfile">Veja e altere o seu perfil</string>
     <string name="projects">Projetos</string>
     <string name="tasks">Tarefas</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_history">History</string>
     <string name="completed">Concluídos</string>
     <string name="editData">Edite os seus dados</string>
     <string name="chagePassword">Altere a sua senha</string>
