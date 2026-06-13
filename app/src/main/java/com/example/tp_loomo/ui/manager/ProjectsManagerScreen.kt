@@ -42,12 +42,11 @@ fun ProjectsManagerScreen(
     val projectsList = viewModel.projectsList
     val isLoading = viewModel.isLoading
 
-    // --- LÓGICA DE FILTRAGEM (PROGRESSO + STATUS DA BASE DE DADOS) ---
+    // --- LÓGICA DE FILTRAGEM (BASEADA APENAS NO PROGRESSO) ---
     val filteredProjects = projectsList.filter {
-        val status = it.project.status?.lowercase()
         when (selectedFilter) {
-            "Andamento" -> it.progress < 100 && status != "completed" && status != "concluded"
-            "Concluidos" -> it.progress == 100 || status == "completed" || status == "concluded"
+            "Andamento" -> it.progress > 0 && it.progress < 100
+            "Concluidos" -> it.progress == 100
             else -> true
         }
     }
