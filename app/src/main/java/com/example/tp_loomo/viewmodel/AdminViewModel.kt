@@ -18,13 +18,31 @@ class AdminViewModel : ViewModel() {
     var allProjectsList by mutableStateOf<List<Project>>(emptyList())
         private set
 
+    var projectProgressMap by mutableStateOf<Map<Int, Int>>(emptyMap())
+        private set
+
     fun loadAllProjects() {
         viewModelScope.launch {
             isLoading = true
             try {
-                allProjectsList = projectRepository.getAllProjects()
+                val projects = projectRepository.getAllProjects()
+                allProjectsList = projects
+
+                val progressMap = mutableMapOf<Int, Int>()
+                for (project in projects) {
+                    val tasks = projectRepository.getProjectTasks(project.id)
+                    val totalTasks = tasks.size
+                    val completedTasks = tasks.count { it.status == "completed" || it.completion_rate == 100 }
+                    progressMap[project.id] = if (totalTasks > 0) {
+                        ((completedTasks.toFloat() / totalTasks) * 100).toInt()
+                    } else {
+                        0
+                    }
+                }
+                projectProgressMap = progressMap
             } catch (e: Exception) {
                 allProjectsList = emptyList()
+                projectProgressMap = emptyMap()
             } finally {
                 isLoading = false
             }
