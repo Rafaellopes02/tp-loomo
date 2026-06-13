@@ -72,8 +72,12 @@ fun ProjectDetailsScreen(
     var editName by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
 
-    // 👇 REVERTIDO: Voltamos a usar as strings simples para evitar quebras no ciclo assíncrono
-    var realManagerName by remember { mutableStateOf("A carregar...") }
+    val txtLoading = stringResource(id = R.string.state_loading)
+    val txtUnknown = stringResource(id = R.string.state_unknown)
+    val txtNoManager = stringResource(id = R.string.state_no_manager)
+    val txtError = stringResource(id = R.string.state_error)
+
+    var realManagerName by remember { mutableStateOf(txtLoading) }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(projectId) {
@@ -92,6 +96,17 @@ fun ProjectDetailsScreen(
             "Andamento" -> status != "concluída" && status != "concluded" && status != "completed"
             "Concluído" -> status == "concluída" || status == "concluded" || status == "completed"
             else -> true
+        }
+    }
+
+    // --- CÁLCULO DINÂMICO DO PROGRESSO DO PROJETO ---
+    val progressPct = remember(projectTasks) {
+        if (projectTasks.isEmpty()) 0
+        else {
+            val completedCount = projectTasks.count {
+                it.status?.lowercase() in listOf("completed", "concluded", "concluída", "concluido")
+            }
+            (completedCount * 100) / projectTasks.size
         }
     }
 
@@ -241,8 +256,7 @@ fun ProjectDetailsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 👇 MAPEAMENTO SEGURO DA TRADUÇÃO DO GESTOR: Fora do LaunchedEffect para compilar sem quebras
-                    val translatedManagerName = when(realManagerName) {
+                    val translatedManagerName = when (realManagerName) {
                         "A carregar..." -> stringResource(id = R.string.state_loading)
                         "Desconhecido" -> stringResource(id = R.string.state_unknown)
                         "Sem Gestor" -> stringResource(id = R.string.state_no_manager)
@@ -250,20 +264,29 @@ fun ProjectDetailsScreen(
                         "Sem Nome" -> stringResource(id = R.string.unnamed_user)
                         else -> realManagerName
                     }
-                    Text(text = stringResource(id = R.string.manager_prefix, translatedManagerName), fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+
+                    Text(
+                        text = stringResource(id = R.string.manager_prefix, translatedManagerName),
+                        fontSize = 15.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Bold
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // 👇 MUDADO PARA EXIBIR A PERCENTAGEM DINÂMICA
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                             val deadlineText = project.end_date ?: stringResource(id = R.string.no_deadline_short)
                             Text(text = stringResource(id = R.string.label_project_deadline_prefix, deadlineText), color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-                        Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(text = "$progressPct%", color = Color(0xFF1C61A2), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    // 👇 MUDADO PARA PREENCHER A BARRA MEDIANTE O COEFICIENTE REAL
                     Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
-                        Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
+                        Box(modifier = Modifier.fillMaxWidth(progressPct / 100f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
                     }
                 }
             }
@@ -358,7 +381,24 @@ fun ProjectDetailsScreen(
                 title = { Text(text = stringResource(id = R.string.dialog_delete_project_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black) },
                 text = { Text(text = stringResource(id = R.string.dialog_delete_project_text), fontSize = 15.sp, color = Color.DarkGray) },
                 confirmButton = {
-                    Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), shape = RoundedCornerShape(12.dp), onClick = { showDeleteDialog = false }) { Text(text = stringResource(id = R.string.btn_yes_short), color = Color.White, fontWeight = FontWeight.Bold) }
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = {
+                            // 👇 ADICIONADA A LÓGICA DE REMOÇÃO DIRETA NO SUPABASE POSTGREST
+                            coroutineScope.launch {
+                                try {
+                                    supabase.postgrest["projects"].delete {
+                                        filter { eq("id", projectId) }
+                                    }
+                                    showDeleteDialog = false
+                                    onBackClick() // Redireciona o gestor em segurança
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    ) { Text(text = stringResource(id = R.string.btn_yes_short), color = Color.White, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) { Text(text = stringResource(id = R.string.btn_close_short), color = Color.Gray) }

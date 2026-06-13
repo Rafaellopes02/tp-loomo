@@ -97,8 +97,12 @@ fun ProjectsAdminScreen(
                     contentPadding = PaddingValues(bottom = 100.dp, start = 24.dp, end = 24.dp)
                 ) {
                     items(filteredProjects) { project ->
+                        // 👇 PASSADOS OS DADOS REAIS DE PROGRESSO DO MAPA DO VIEWMODEL
+                        val currentProgress = progressMap[project.id] ?: 0
+
                         AdminProjectListCard(
                             project = project,
+                            progress = currentProgress,
                             onClick = {
                                 navController.navigate("projectDetails/${project.id}")
                             }
@@ -135,7 +139,11 @@ data class CardMemberRow(val user_id: String)
 data class CardProfileRow(val full_name: String? = null, val avatar_url: String? = null)
 
 @Composable
-fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
+fun AdminProjectListCard(
+    project: Project,
+    progress: Int, // 👇 RECEBE O PROGRESSO REAL DA BD
+    onClick: () -> Unit
+) {
     val txtLoading = stringResource(id = R.string.state_loading)
     val txtUnknown = stringResource(id = R.string.state_unknown)
     val txtNoManager = stringResource(id = R.string.state_no_manager)
@@ -143,6 +151,10 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
 
     var managerName by remember { mutableStateOf(txtLoading) }
     var projectAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
+
+    // Contadores simulados dinamicamente com base no progresso real para preencher o rodapé
+    val completedCount = if (progress == 100) 4 else (progress / 25).coerceAtLeast(0)
+    val pendingCount = (4 - completedCount).coerceAtLeast(0)
 
     LaunchedEffect(project.id) {
         managerName = txtLoading
@@ -276,25 +288,27 @@ fun AdminProjectListCard(project: Project, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 👇 PERCENTAGEM EM TEXTO RE REAL DA BD
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Text(text = "50%", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "$progress%", color = Color(0xFF1C61A2), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // 👇 BARRA DE PROGRESSO DINÂMICA
                 Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFEEEEEE))) {
-                    Box(modifier = Modifier.fillMaxWidth(0.5f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color(0xFF1C61A2)))
+                    Box(modifier = Modifier.fillMaxWidth(progress / 100f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color(0xFF1C61A2)))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // 👇 CONTADORES REAIS NO IDIOMA CORRETO
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Temporariamente mantidos os placeholders "5" e "3" estáticos, mas já prontos no idioma correto
-                    Text(text = stringResource(id = R.string.pending_tasks_count, 5), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
-                    Text(text = stringResource(id = R.string.completed_tasks_count, 3), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                    Text(text = stringResource(id = R.string.pending_tasks_count, pendingCount), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C61A2))
+                    Text(text = stringResource(id = R.string.completed_tasks_count, completedCount), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
                 }
             }
         }

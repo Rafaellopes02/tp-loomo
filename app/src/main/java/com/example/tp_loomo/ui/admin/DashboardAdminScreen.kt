@@ -52,7 +52,11 @@ fun DashboardAdminScreen(
     var showAddUserModal by remember { mutableStateOf(false) }
     var showAddProjectModal by remember { mutableStateOf(false) }
 
+    // Chamada inicial para atualizar os dados reais vindo da BD
     LaunchedEffect(Unit) {
+        adminViewModel.loadAllProjects()
+        adminViewModel.loadUsersForSelection(false)
+
         coroutineScope.launch {
             try {
                 val currentUser = supabase.auth.currentUserOrNull()
@@ -67,6 +71,14 @@ fun DashboardAdminScreen(
             } catch (e: Exception) { }
         }
     }
+
+    // --- CÁLCULO DINÂMICO DOS DADOS DOS CARDS ---
+    val totalProjectsCount = adminViewModel.allProjectsList.size
+    val totalUsersCount = adminViewModel.usersList.size
+
+    // Filtros calculados dinamicamente com base no status guardado na BD
+    val activeTasksCount = adminViewModel.allProjectsList.count { it.status == "active" || it.status == "pending" }
+    val completedProjectsCount = adminViewModel.allProjectsList.count { it.status == "concluded" || it.status == "completed" }
 
     Column(
         modifier = Modifier
@@ -85,7 +97,7 @@ fun DashboardAdminScreen(
                 if (!avatarUrl.isNullOrEmpty() && avatarUrl != "null") {
                     AsyncImage(
                         model = avatarUrl,
-                        contentDescription = "Avatar",
+                        contentDescription = stringResource(id = R.string.porfile),
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
@@ -107,15 +119,15 @@ fun DashboardAdminScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Grelha de Estatísticas
+        // Grelha de Estatísticas 100% Dinâmica
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminStatCard(title = stringResource(id = R.string.totalProjects), value = "18", bgColor = Color(0xFF9EBAE1), titleColor = Color(0xFF1C61A2), modifier = Modifier.weight(1f))
-                AdminStatCard(title = stringResource(id = R.string.users), value = "3", bgColor = Color(0xFFC4AED6), titleColor = Color(0xFF6A1B9A), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.totalProjects), value = totalProjectsCount.toString(), bgColor = Color(0xFF9EBAE1), titleColor = Color(0xFF1C61A2), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.users), value = totalUsersCount.toString(), bgColor = Color(0xFFC4AED6), titleColor = Color(0xFF6A1B9A), modifier = Modifier.weight(1f))
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminStatCard(title = stringResource(id = R.string.activeTasks), value = "8", bgColor = Color(0xFFF3E19C), titleColor = Color(0xFFF57F17), modifier = Modifier.weight(1f))
-                AdminStatCard(title = stringResource(id = R.string.completedProjects), value = "2", bgColor = Color(0xFF90D992), titleColor = Color(0xFF2E7D32), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.activeTasks), value = activeTasksCount.toString(), bgColor = Color(0xFFF3E19C), titleColor = Color(0xFFF57F17), modifier = Modifier.weight(1f))
+                AdminStatCard(title = stringResource(id = R.string.completedProjects), value = completedProjectsCount.toString(), bgColor = Color(0xFF90D992), titleColor = Color(0xFF2E7D32), modifier = Modifier.weight(1f))
             }
         }
 
