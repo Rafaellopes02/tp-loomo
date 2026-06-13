@@ -86,6 +86,15 @@ fun ProjectDetailsScreen(
     val isLoading = viewModel.isLoading
     val allUsers = viewModel.allUsers
 
+    val filteredTasks = projectTasks.filter { task ->
+        val status = task.status?.lowercase()
+        when (selectedTab) {
+            "Andamento" -> status != "concluída" && status != "concluded" && status != "completed"
+            "Concluído" -> status == "concluída" || status == "concluded" || status == "completed"
+            else -> true
+        }
+    }
+
     LaunchedEffect(project?.project_manager_id) {
         if (project?.project_manager_id != null) {
             try {
@@ -268,12 +277,12 @@ fun ProjectDetailsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            if (projectTasks.isEmpty()) {
+            if (filteredTasks.isEmpty()) {
                 item {
                     Text(text = stringResource(id = R.string.task_empty_list), color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             } else {
-                items(projectTasks) { task ->
+                items(filteredTasks) { task ->
                     TaskItemCard(
                         title = task.title,
                         time = task.due_date ?: stringResource(id = R.string.task_no_date),
