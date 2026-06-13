@@ -33,6 +33,7 @@ import com.example.tp_loomo.viewmodel.ProjectUiModel
 @Composable
 fun DashboardManagerScreen(
     onProjectClick: (Int) -> Unit = {},
+    onViewAllProjectsClick: () -> Unit = {},
     managerViewModel: ManagerViewModel = viewModel(),
     profileViewModel: ProfileViewModel = viewModel()
 ) {
@@ -135,7 +136,8 @@ fun DashboardManagerScreen(
                 text = stringResource(id = R.string.see_all),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C61A2)
+                color = Color(0xFF1C61A2),
+                modifier = Modifier.clickable { onViewAllProjectsClick() }
             )
         }
 
