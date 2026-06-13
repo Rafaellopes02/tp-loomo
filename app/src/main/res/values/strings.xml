@@ -119,6 +119,11 @@
     <string name="dialog_select_manager">Selecionar Gestor</string>
     <string name="dialog_select_member">Selecionar Membro</string>
     <string name="search_placeholder">Pesquisar…</string>
+    <string name="viewCompletedTasks">Veja as tarefas concluídas</string>
+    <string name="searchTasksOrProjects">Pesquisar tarefas ou projetos</string>
+    <string name="search">Pesquisar</string>
+    <string name="noCompletedTasks">Sem tarefas concluídas para mostrar.</string>
+    <string name="more">Mais</string>
     <string name="error_fill_all_fields">Preencha todos os campos</string>
     <string name="error_fill_project_fields">Preencha o título e selecione um Gestor</string>
     <string name="project_created_success">Projeto criado com sucesso!</string>
