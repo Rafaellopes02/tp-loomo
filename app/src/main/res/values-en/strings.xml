@@ -239,4 +239,8 @@
     <string name="toast_error_delete_user">Error removing: %1$s</string>
     <string name="btn_confirm_delete">Yes, delete</string>
     <string name="password_visibility_desc">Show or hide password</string>
+    <string name="photo_picker_title">Profile Picture</string>
+    <string name="photo_picker_option_gallery">Choose from Gallery</string>
+    <string name="photo_picker_option_predefined">System Avatars</string>
+    <string name="photo_picker_predefined_title">Select an Avatar</string>
 </resources>

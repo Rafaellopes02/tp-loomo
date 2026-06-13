@@ -35,13 +35,13 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    fun signUp(fullName: String, username: String, email: String, pass: String, onSuccess: () -> Unit) {
+    fun signUp(fullName: String, username: String, email: String, pass: String, avatarUrl: String?, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
             try {
-                repository.signUp(fullName, username, email, pass)
-                onSuccess() // Se não der erro, avisa a UI para ir para o Login
+                repository.signUp(fullName, username, email, pass, avatarUrl)
+                onSuccess()
             } catch (e: Exception) {
                 errorMessage = "Erro ao criar conta: ${e.localizedMessage}"
             } finally {

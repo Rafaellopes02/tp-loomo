@@ -241,4 +241,8 @@
     <string name="toast_error_delete_user">Erro ao remover: %1$s</string>
     <string name="btn_confirm_delete">Sim, eliminar</string>
     <string name="password_visibility_desc">Mostrar ou esconder palavra-passe</string>
+    <string name="photo_picker_title">Foto de Perfil</string>
+    <string name="photo_picker_option_gallery">Escolher da Galeria</string>
+    <string name="photo_picker_option_predefined">Avatares do Sistema</string>
+    <string name="photo_picker_predefined_title">Selecione um Avatar</string>
 </resources>

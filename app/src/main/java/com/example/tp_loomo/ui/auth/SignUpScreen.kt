@@ -2,20 +2,25 @@ package com.example.tp_loomo.ui.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.tp_loomo.R
 import com.example.tp_loomo.viewmodel.AuthViewModel
 
@@ -47,9 +53,23 @@ fun SignUpScreen(
     var senha by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    var showAvatarScreen by remember { mutableStateOf(false) }
+    var selectedAvatarDrawable by remember { mutableStateOf<Int?>(null) }
+
     // Lemos os estados do ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
+
+    if (showAvatarScreen) {
+        SetAvatarScreen(
+            onDismiss = { showAvatarScreen = false },
+            onSave = { drawableId ->
+                selectedAvatarDrawable = drawableId
+                showAvatarScreen = false
+            }
+        )
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -69,8 +89,17 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // FOTO DE PERFIL
-        Image(painter = painterResource(id = R.drawable.ic_camera_placeholder), contentDescription = "Adicionar foto de perfil", modifier = Modifier.size(180.dp))
+        // FOTO DE PERFIL (agora clicável para escolher avatar)
+        Box(
+            modifier = Modifier.size(180.dp).clip(CircleShape).clickable { showAvatarScreen = true },
+            contentAlignment = Alignment.Center
+        ) {
+            if (selectedAvatarDrawable != null) {
+                AsyncImage(model = selectedAvatarDrawable, contentDescription = "Avatar selecionado", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else {
+                Image(painter = painterResource(id = R.drawable.ic_camera_placeholder), contentDescription = "Adicionar foto de perfil", modifier = Modifier.fillMaxSize())
+            }
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -144,12 +173,12 @@ fun SignUpScreen(
         // BOTÃO CRIAR CONTA
         Button(
             onClick = {
-                // AQUI CHAMAMOS O VIEWMODEL
                 viewModel.signUp(
                     fullName = fullName,
                     username = username,
                     email = email,
                     pass = senha,
+                    avatarUrl = selectedAvatarDrawable?.let { avatarToDbValue(it) },
                     onSuccess = { onLoginClick() }
                 )
             },
@@ -171,6 +200,74 @@ fun SignUpScreen(
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Text(text = stringResource(id = R.string.have_account), color = Color.Black, fontSize = 16.sp)
             Text(text = stringResource(id = R.string.btn_login), color = loomoBlue, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.clickable { onLoginClick() })
+        }
+    }
+}
+
+// Mapeia o resource drawable para a string gravada na BD
+fun avatarToDbValue(drawableId: Int): String = when (drawableId) {
+    R.drawable.avatar1 -> "avatar1"
+    R.drawable.avatar2 -> "avatar2"
+    R.drawable.avatar3 -> "avatar3"
+    R.drawable.avatar4 -> "avatar4"
+    R.drawable.avatar5 -> "avatar5"
+    R.drawable.avatar6 -> "avatar6"
+    else -> "avatar1"
+}
+
+@Composable
+fun SetAvatarScreen(
+    onDismiss: () -> Unit,
+    onSave: (Int) -> Unit
+) {
+    val avatars = listOf(
+        R.drawable.avatar1, R.drawable.avatar2, R.drawable.avatar3,
+        R.drawable.avatar4, R.drawable.avatar5, R.drawable.avatar6
+    )
+    var selectedAvatar by remember { mutableStateOf<Int?>(null) }
+
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
+            }
+            Text(text = "Escolher Avatar", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            TextButton(
+                onClick = { selectedAvatar?.let { onSave(it) } },
+                enabled = selectedAvatar != null
+            ) {
+                Text(text = "Confirmar", color = if (selectedAvatar != null) Color(0xFF1C61A2) else Color.LightGray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "Escolhe o teu avatar", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 24.dp))
+
+            avatars.chunked(3).forEach { rowAvatars ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
+                    rowAvatars.forEach { drawableId ->
+                        val isSelected = selectedAvatar == drawableId
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    width = if (isSelected) 4.dp else 1.dp,
+                                    color = if (isSelected) Color(0xFF1C61A2) else Color(0xFFE0E0E0),
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedAvatar = drawableId }
+                        ) {
+                            AsyncImage(model = drawableId, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }
