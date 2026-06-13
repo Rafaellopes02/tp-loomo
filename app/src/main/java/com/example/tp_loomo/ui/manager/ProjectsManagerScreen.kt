@@ -43,7 +43,7 @@ fun ProjectsManagerScreen(
     val projectsList = viewModel.projectsList
     val isLoading = viewModel.isLoading
 
-    // --- LÓGICA DE FILTRAGEM (BASEADA APENAS NO PROGRESSO) ---
+    // LÓGICA DE FILTRAGEM
     val filteredProjects = projectsList.filter {
         when (selectedFilter) {
             "Andamento" -> it.progress < 100
@@ -63,7 +63,7 @@ fun ProjectsManagerScreen(
         modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
         contentPadding = PaddingValues(top = 48.dp, bottom = 120.dp)
     ) {
-        // --- CABEÇALHO ---
+        // CABEÇALHO
         item {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -76,7 +76,7 @@ fun ProjectsManagerScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // --- FILTROS ---
+        // FILTROS
         item {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -91,7 +91,7 @@ fun ProjectsManagerScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // --- CARTÕES DOS PROJETOS ---
+        // CARTÕES DOS PROJETOS
         if (filteredProjects.isEmpty()) {
             item {
                 Text(

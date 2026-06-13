@@ -35,15 +35,12 @@ class UserViewModel : ViewModel() {
             try {
                 val userId = supabase.auth.currentUserOrNull()?.id
                 if (userId != null) {
-                    // 1. Carregar perfil do utilizador
                     currentUser = supabase.postgrest["profiles"]
                         .select { filter { eq("id", userId) } }
                         .decodeSingleOrNull<UserProfile>()
 
-                    // 2. Carregar projetos onde o utilizador é membro
                     userProjects = repository.getMemberProjects()
 
-                    // 3. Carregar APENAS as tarefas atribuídas a ele (AQUI ESTÁ A MAGIA!)
                     userTasks = repository.getUserTasks(userId)
                 }
             } catch (e: Exception) {

@@ -100,7 +100,7 @@ fun ProjectDetailsScreen(
         }
     }
 
-    // --- CÁLCULO DINÂMICO DO PROGRESSO DO PROJETO ---
+    // CÁLCULO DINÂMICO DO PROGRESSO DO PROJETO
     val progressPct = remember(projectTasks) {
         if (projectTasks.isEmpty()) 0
         else {
@@ -275,7 +275,6 @@ fun ProjectDetailsScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 👇 MUDADO PARA EXIBIR A PERCENTAGEM DINÂMICA
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                             val deadlineText = project.end_date ?: stringResource(id = R.string.no_deadline_short)
@@ -285,7 +284,6 @@ fun ProjectDetailsScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 👇 MUDADO PARA PREENCHER A BARRA MEDIANTE O COEFICIENTE REAL
                     Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFE0E0E0))) {
                         Box(modifier = Modifier.fillMaxWidth(progressPct / 100f).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Color(0xFF1C61A2)))
                     }
@@ -386,14 +384,13 @@ fun ProjectDetailsScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         shape = RoundedCornerShape(12.dp),
                         onClick = {
-                            // 👇 ADICIONADA A LÓGICA DE REMOÇÃO DIRETA NO SUPABASE POSTGREST
                             coroutineScope.launch {
                                 try {
                                     supabase.postgrest["projects"].delete {
                                         filter { eq("id", projectId) }
                                     }
                                     showDeleteDialog = false
-                                    onBackClick() // Redireciona o gestor em segurança
+                                    onBackClick()
                                 } catch (e: Exception) {
                                     Toast.makeText(context, context.getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
                                 }

@@ -139,7 +139,6 @@ class ProjectRepository {
         return try {
             supabase.postgrest["profiles"].select {
                 filter {
-                    // Assume que a tua coluna se chama "role" e o valor é "user"
                     eq("role", "user")
                 }
             }.decodeList<UserProfile>()
@@ -152,7 +151,6 @@ class ProjectRepository {
         return try {
             Log.d("ProjectRepository", "🔍 A procurar tarefas para o user: $userId")
 
-            // 1. Vai buscar APENAS as colunas task_id e user_id
             val assignments = supabase.postgrest["task_assignments"].select(
                 columns = Columns.list("task_id", "user_id")
             ) {
@@ -161,29 +159,29 @@ class ProjectRepository {
                 }
             }.decodeList<TaskAssignmentRow>()
 
-            Log.d("ProjectRepository", "✅ Atribuições encontradas: ${assignments.size}")
+            Log.d("ProjectRepository", "Atribuições encontradas: ${assignments.size}")
 
-            // Se ele não tiver tarefas atribuídas, devolvemos logo uma lista vazia
+            // Se ele não tiver tarefas atribuídas, devolve uma lista vazia
             if (assignments.isEmpty()) {
                 return emptyList()
             }
 
-            // 2. Extrai apenas os IDs das tarefas (ex: [17, 18, 20])
+            // Extrai apenas os IDs das tarefas
             val taskIds = assignments.map { it.task_id }
-            Log.d("ProjectRepository", "📌 IDs das tarefas dele: $taskIds")
+            Log.d("ProjectRepository", "IDs das tarefas dele: $taskIds")
 
-            // 3. Vai à tabela 'tasks' buscar apenas as tarefas que têm estes IDs
+            // Vai à tabela 'tasks' buscar apenas as tarefas que têm estes IDs
             val tasks = supabase.postgrest["tasks"].select {
                 filter {
                     isIn("id", taskIds.map { it as Any })
                 }
             }.decodeList<Task>()
 
-            Log.d("ProjectRepository", "🚀 Tarefas finais descarregadas: ${tasks.size}")
+            Log.d("ProjectRepository", "Tarefas finais descarregadas: ${tasks.size}")
             tasks
 
         } catch (e: Exception) {
-            Log.e("ProjectRepository", "❌ ERRO GRAVE ao carregar tarefas: ${e.message}", e)
+            Log.e("ProjectRepository", "ERRO GRAVE ao carregar tarefas: ${e.message}", e)
             emptyList()
         }
     }

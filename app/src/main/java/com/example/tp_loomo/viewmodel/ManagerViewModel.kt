@@ -46,38 +46,35 @@ class ManagerViewModel : ViewModel() {
                 val summaries = projects.map { project ->
                     val projectId = project.id ?: return@map null
 
-                    // --- 1. BUSCAR AVATAR DO GESTOR ---
+                    // BUSCAR AVATAR DO GESTOR
                     var managerAvatar: String? = null
                     if (project.project_manager_id != null) {
                         try {
-                            // Reutiliza a ManagerAvatarRow que declaraste no ProjectsManagerViewModel
                             val profile = supabase.postgrest["profiles"]
                                 .select(columns = Columns.list("avatar_url")) {
                                     filter { eq("id", project.project_manager_id) }
                                 }.decodeSingleOrNull<ManagerAvatarRow>()
                             managerAvatar = profile?.avatar_url
                         } catch (e: Exception) {
-                            // Ignora se der erro ao buscar perfil do gestor
                         }
                     }
 
-                    // --- 2. BUSCAR TAREFAS E EQUIPA ---
+                    // BUSCAR TAREFAS E EQUIPA
                     val tasks = repository.getProjectTasks(projectId)
                     val members = repository.getProjectMembers(projectId)
                     val teamAvatars = members.map { it.avatar_url }
 
-                    // --- 3. JUNTAR GESTOR + EQUIPA ---
+                    // JUNTAR GESTOR + EQUIPA
                     val combinedAvatars = mutableListOf<String?>()
                     combinedAvatars.add(managerAvatar)
                     combinedAvatars.addAll(teamAvatars)
                     val finalAvatars = combinedAvatars.distinct()
 
-                    // --- 4. CONTAS DE PROGRESSO ---
+                    // CONTAS DE PROGRESSO
                     val completed = tasks.count { it.status == "completed" || it.completion_rate == 100 }
                     val pending = tasks.size - completed
                     val progress = if (tasks.isEmpty()) 0f else completed.toFloat() / tasks.size
 
-                    // Agora injeta a lista combinada de finalAvatars!
                     ProjectSummary(project, finalAvatars, pending, completed, progress)
                 }.filterNotNull()
 

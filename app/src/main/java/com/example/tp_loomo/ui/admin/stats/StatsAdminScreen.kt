@@ -1,25 +1,15 @@
 package com.example.tp_loomo.ui.admin.stats
 
-import android.content.Context
-import android.print.PrintAttributes
-import android.print.PrintManager
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,19 +24,13 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import java.text.SimpleDateFormat
 import com.example.tp_loomo.ui.admin.stats.reports.buildReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.buildTaskReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.buildUserReportHtml
 import com.example.tp_loomo.ui.admin.stats.reports.exportHtmlToPdf
 import com.example.tp_loomo.ui.admin.stats.reports.exportTaskHtmlToPdf
 import com.example.tp_loomo.ui.admin.stats.reports.exportUserHtmlToPdf
-import java.util.*
 
-// -----------------------------------------------------------
-// SCREEN PRINCIPAL
-// -----------------------------------------------------------
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -268,7 +252,6 @@ fun StatsAdminScreen() {
                                                 val manager = usersList.find { it.id == proj.project_manager_id }
                                                 val team = usersList.filter { teamIds.contains(it.id) }
 
-                                                // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
                                                 val html = buildReportHtml(
                                                     context = context,
                                                     project = proj,
@@ -310,7 +293,6 @@ fun StatsAdminScreen() {
                                                         }
                                                         .decodeList<StatTaskRecord2>()
 
-                                                    // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
                                                     val html = buildTaskReportHtml(
                                                         context = context,
                                                         task = task,
@@ -366,7 +348,6 @@ fun StatsAdminScreen() {
                                                         }
                                                         .decodeList<StatTaskRecord2>()
 
-                                                    // 👇 ADICIONADO O CONTEXT COMO PRIMEIRO PARÂMETRO
                                                     val html = buildUserReportHtml(
                                                         context = context,
                                                         user = user,

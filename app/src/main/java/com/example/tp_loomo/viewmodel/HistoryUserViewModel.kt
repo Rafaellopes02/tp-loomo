@@ -13,15 +13,14 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// Estrutura para segurar todos os dados necessários para um item do histórico
 data class HistoryTaskUiModel(
     val task: Task,
     val projectName: String,
     val timeSpent: String,
-    val completionDateRaw: String?, // yyyy-MM-dd, usado para ordenação
-    val completionDateFormatted: String, // dd/MM/yyyy
-    val monthGroup: String, // ex: "Abril De 2026"
-    val monthSortKey: String // ex: "2026-04", usado para ordenação dos grupos
+    val completionDateRaw: String?,
+    val completionDateFormatted: String,
+    val monthGroup: String,
+    val monthSortKey: String
 )
 
 class HistoryUserViewModel : ViewModel() {
@@ -48,7 +47,7 @@ class HistoryUserViewModel : ViewModel() {
             try {
                 val userId = supabase.auth.currentUserOrNull()?.id ?: return@launch
 
-                // 1. Vai buscar as tarefas do user e filtra apenas as concluídas
+                // Vai buscar as tarefas do user e filtra apenas as concluídas
                 val completedTasks = repository.getUserTasks(userId)
                     .filter { it.status == "completed" }
 
@@ -57,7 +56,7 @@ class HistoryUserViewModel : ViewModel() {
                 for (task in completedTasks) {
                     val project = task.project_id.let { repository.getProjectById(it) }
 
-                    // 2. Vai buscar o registo mais recente desta tarefa para obter tempo e data de conclusão
+                    // Vai buscar o registo mais recente desta tarefa para obter tempo e data de conclusão
                     val records = task.id?.let { repository.getTaskRecords(it) } ?: emptyList()
                     val latestRecord = records.maxByOrNull { it.date }
 
@@ -81,7 +80,7 @@ class HistoryUserViewModel : ViewModel() {
                     )
                 }
 
-                // 3. Ordena por mês e depois por data de conclusão
+                // Ordena por mês e depois por data de conclusão
                 historyList = combinedList.sortedWith(
                     compareBy({ it.monthSortKey }, { it.completionDateRaw ?: "" })
                 )

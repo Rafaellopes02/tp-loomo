@@ -13,14 +13,13 @@ data class ProfileEmail(val email: String)
 
 class AuthRepository {
 
-    // Função de Login (Suporta Email ou Username)
+    // Função de Login
     suspend fun login(emailOrUsername: String, pass: String) {
         val isEmail = emailOrUsername.contains("@")
 
         val emailToLogin = if (isEmail) {
             emailOrUsername
         } else {
-            // Vai à base de dados procurar o email associado ao username
             val perfis = supabase.postgrest["profiles"]
                 .select {
                     filter {
@@ -33,15 +32,13 @@ class AuthRepository {
             }
             perfis.first().email
         }
-
-        // Faz o login no Supabase
         supabase.auth.signInWith(Email) {
             this.email = emailToLogin
             this.password = pass
         }
     }
 
-    // Função de Registo (Sign Up)
+    // Função de Registo
     suspend fun signUp(fullName: String, username: String, email: String, pass: String, avatarUrl: String?) {
         supabase.auth.signUpWith(Email) {
             this.email = email
@@ -53,8 +50,6 @@ class AuthRepository {
             }
         }
     }
-
-    // Função bónus: Logout (vai dar jeito mais tarde!)
     suspend fun logout() {
         supabase.auth.signOut()
     }

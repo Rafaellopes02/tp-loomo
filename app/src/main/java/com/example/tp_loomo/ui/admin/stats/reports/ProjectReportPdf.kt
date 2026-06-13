@@ -26,7 +26,7 @@ fun exportHtmlToPdf(context: Context, htmlContent: String, projectName: String) 
 }
 
 fun buildReportHtml(
-    context: Context, // <-- AGORA RECEBE O CONTEXT AQUI
+    context: Context,
     project: StatProject,
     tasks: List<StatTask>,
     manager: StatUser?,
@@ -35,10 +35,10 @@ fun buildReportHtml(
     allUsers: List<StatUser>,
 ): String {
     // Buscar todas as traduções necessárias via Context
-    val txtNoDescription = context.getString(R.string.description) // "Sem descrição disponível" ou chave similar
+    val txtNoDescription = context.getString(R.string.description)
     val txtNoManager = context.getString(R.string.state_no_manager)
     val txtNoDeadline = context.getString(R.string.no_deadline)
-    val txtToDefine = context.getString(R.string.dropdown_select_placeholder) // ou uma nova se preferires "A Definir"
+    val txtToDefine = context.getString(R.string.dropdown_select_placeholder)
     val txtPending = context.getString(R.string.pending_tasks_stat)
     val txtCompleted = context.getString(R.string.completed)
     val txtInProgress = context.getString(R.string.filter_in_progress)
@@ -54,7 +54,6 @@ fun buildReportHtml(
     val pendingTasks = totalTasks - completedTasks
     val completionPct = if (totalTasks > 0) (completedTasks * 100) / totalTasks else 0
 
-    // Formatação de data respeitando a Localização atual do sistema do telemóvel
     val currentDate = SimpleDateFormat("dd MMMM yyyy · HH:mm", Locale.getDefault()).format(Date())
 
     val managerName = manager?.full_name ?: txtNoManager

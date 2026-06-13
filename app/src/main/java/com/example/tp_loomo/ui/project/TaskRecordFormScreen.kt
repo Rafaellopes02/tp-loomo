@@ -100,7 +100,7 @@ fun TaskRecordFormScreen(
             .background(Color(0xFFFAFAFA))
             .verticalScroll(rememberScrollState())
     ) {
-        // --- CABEÇALHO ---
+        // CABEÇALHO
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -124,7 +124,7 @@ fun TaskRecordFormScreen(
             }
         }
 
-        // --- FORMULÁRIO ---
+        // FORMULÁRIO
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
 
             Text(text = task?.title ?: stringResource(id = R.string.state_loading), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)

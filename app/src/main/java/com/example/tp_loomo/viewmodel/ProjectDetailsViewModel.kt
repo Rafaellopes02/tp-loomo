@@ -15,7 +15,6 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-// --- MODELOS PARA INSERIR TAREFAS NA BD ---
 @Serializable
 data class TaskInsert(
     val project_id: Int,
@@ -104,12 +103,12 @@ class ProjectDetailsViewModel : ViewModel() {
                     due_date = dueDate
                 )
 
-                // 1. Insere a tarefa e pede a linha de volta para saber qual é o ID gerado
+                // Insere a tarefa e pede a linha de volta para saber qual é o ID gerado
                 val insertedTask = supabase.postgrest["tasks"]
                     .insert(newTask) { select() }
                     .decodeSingle<Task>()
 
-                // 2. Se o utilizador escolheu membros, grava TODOS na tabela task_assignments
+                // Se o utilizador escolheu membros, grava TODOS na tabela task_assignments
                 if (selectedMemberIds.isNotEmpty() && insertedTask.id != null) {
                     val assignments = selectedMemberIds.map { userId ->
                         TaskAssignmentInsert(
@@ -117,11 +116,10 @@ class ProjectDetailsViewModel : ViewModel() {
                             user_id = userId
                         )
                     }
-                    // O Supabase permite inserir uma lista inteira de uma só vez!
                     supabase.postgrest["task_assignments"].insert(assignments)
                 }
 
-                // 3. Atualiza os dados do ecrã e fecha o modal
+                // Atualiza os dados do ecrã e fecha o modal
                 loadProjectDetails(projectId)
                 onSuccess()
             } catch (e: Exception) {

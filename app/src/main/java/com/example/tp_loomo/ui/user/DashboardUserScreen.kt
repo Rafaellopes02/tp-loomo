@@ -58,14 +58,12 @@ fun DashboardUserScreen(
         modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // --- CABEÇALHO ---
+        // CABEÇALHO
         item {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar
-                // Avatar
                 Box(
                     modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFE0E0E0)),
                     contentAlignment = Alignment.Center
@@ -79,8 +77,6 @@ fun DashboardUserScreen(
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
-
-                // Texto de Boas-vindas
                 Column {
                     Text(
                         text = stringResource(id = R.string.hello) + (user?.full_name?.split(" ")?.firstOrNull() ?: stringResource(id = R.string.user)),
@@ -93,7 +89,7 @@ fun DashboardUserScreen(
             }
         }
 
-        // --- CARROSSEL DE PROJETOS (SCROLL HORIZONTAL) ---
+        // CARROSSEL DE PROJETOS
         item {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 24.dp),
@@ -112,7 +108,7 @@ fun DashboardUserScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // --- TÍTULO DAS TAREFAS ---
+        // TÍTULO DAS TAREFAS
         item {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -131,7 +127,7 @@ fun DashboardUserScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- LISTA DE TAREFAS ---
+        // LISTA DE TAREFAS
         if (tasks.isEmpty()) {
             item {
                 Text(stringResource(id = R.string.no_pending_tasks), color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(24.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -150,7 +146,7 @@ fun DashboardUserScreen(
     }
 }
 
-// --- CARTÃO DE PROJETO AO ESTILO DO MOCKUP ---
+// CARTÃO DE PROJETO
 @Composable
 fun ProjectCardUser(project: Project, onClick: () -> Unit) {
     var currentCover by remember(project.cover_url) {
@@ -172,7 +168,6 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Imagem de Capa
             Box(
                 modifier = Modifier.fillMaxWidth().height(140.dp)
                     .background(Brush.linearGradient(colors = listOf(Color(0xFFDCA9F5), Color(0xFF84A6E8)))) // Fallback gradient
@@ -187,7 +182,6 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
                 }
             }
 
-            // Área Branca com os Dados
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -205,7 +199,6 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Prazo Badge
                 Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFEBEE)).padding(horizontal = 10.dp, vertical = 6.dp)) {
                     Text(text = project.end_date ?: stringResource(id = R.string.no_deadline_short), color = Color(0xFFD32F2F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
@@ -214,7 +207,7 @@ fun ProjectCardUser(project: Project, onClick: () -> Unit) {
     }
 }
 
-// --- CARTÃO DA TAREFA CONFIGURADO PARA RECEBER O CLIQUE ---
+// CARTÃO DA TAREFA
 @Composable
 fun TaskItemCard(title: String, time: String, onClick: () -> Unit = {}) {
     Card(

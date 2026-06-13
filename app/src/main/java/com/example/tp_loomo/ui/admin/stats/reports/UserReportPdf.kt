@@ -24,7 +24,7 @@ fun exportUserHtmlToPdf(context: Context, htmlContent: String, userName: String)
 }
 
 fun buildUserReportHtml(
-    context: Context, // <-- AGORA RECEBE O CONTEXT AQUI
+    context: Context,
     user: StatUser,
     email: String?,
     avatarUrl: String?,
@@ -34,7 +34,6 @@ fun buildUserReportHtml(
     records: List<StatTaskRecord2>,
     allTasks: List<StatTask>
 ): String {
-    // Carregar textos traduzidos do strings.xml
     val txtAdmin = context.getString(R.string.admin)
     val txtProjectManager = context.getString(R.string.project_manager_role)
     val txtTeamMember = context.getString(R.string.team_member_role)

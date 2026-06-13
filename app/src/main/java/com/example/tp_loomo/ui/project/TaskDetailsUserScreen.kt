@@ -62,7 +62,7 @@ fun TaskDetailsUserScreen(
             .background(Color(0xFFFAFAFA))
             .verticalScroll(rememberScrollState())
     ) {
-        // --- CABEÇALHO ---
+        // CABEÇALHO
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -86,7 +86,7 @@ fun TaskDetailsUserScreen(
             }
         }
 
-        // --- CONTEÚDO / FORMULÁRIO ---
+        // FORMULÁRIO
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
 
             Text(text = task?.title ?: stringResource(id = R.string.state_loading), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, lineHeight = 32.sp)
@@ -95,7 +95,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 1. Progresso
+            // Progresso
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(text = stringResource(id = R.string.pdf_th_progress), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 Text(text = "${(progress * 100).roundToInt()}%", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C61A2))
@@ -113,7 +113,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Localização
+            // Localização
             Text(text = stringResource(id = R.string.pdf_th_location), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
@@ -124,7 +124,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Data e Tempo Dispensado
+            // Data e Tempo Dispensado
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = stringResource(id = R.string.pdf_th_date), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
@@ -148,7 +148,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. Observações
+            // Observações
             Text(text = stringResource(id = R.string.pdf_th_observations), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
@@ -159,7 +159,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. Anexar Ficheiros
+            // Anexar Ficheiros
             Text(text = stringResource(id = R.string.form_attach_files), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Box(
@@ -187,7 +187,7 @@ fun TaskDetailsUserScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // 6. Botão Concluído
+            // Botão Concluído
             Button(
                 onClick = {
                     onBackClick()

@@ -16,7 +16,6 @@ class AuthViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    // Função de Login chamada pela UI
     fun login(emailOrUsername: String, pass: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true

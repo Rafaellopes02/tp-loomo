@@ -15,14 +15,14 @@ data class StatTask(
     val id: Int,
     val project_id: Int,
     val title: String,
-    val description: String? = null,   // novo
+    val description: String? = null,
     val due_date: String? = null,
-    val location: String? = null,       // novo
+    val location: String? = null,
     val status: String? = null,
     val completion_rate: Int? = null,
-    val estimated_time: Int? = null,    // novo
-    val actual_time: Int? = null,       // novo
-    val notes: String? = null           // novo
+    val estimated_time: Int? = null,
+    val actual_time: Int? = null,
+    val notes: String? = null
 )
 
 @Serializable
@@ -45,8 +45,8 @@ data class StatUser(
     val full_name: String? = null,
     val role: String? = null,
     val username: String? = null,
-    val email: String? = null,       // novo
-    val avatar_url: String? = null   //
+    val email: String? = null,
+    val avatar_url: String? = null
 )
 
 @Serializable

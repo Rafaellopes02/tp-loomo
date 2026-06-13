@@ -38,7 +38,6 @@ class TaskDetailsViewModel : ViewModel() {
     var isAssignedToCurrentUser by mutableStateOf(false)
         private set
 
-    // Nova variável para guardar a lista de registos
     var taskRecords by mutableStateOf<List<TaskRecordUiModel>>(emptyList())
         private set
 
@@ -46,7 +45,6 @@ class TaskDetailsViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
-                // 1. Carrega a tarefa e permissões
                 val loadedTask = repository.getTaskById(taskId)
                 task = loadedTask
 
@@ -62,18 +60,15 @@ class TaskDetailsViewModel : ViewModel() {
                     }
                 }
 
-                // 2. Carrega os registos de trabalho
                 val rawRecords = repository.getTaskRecords(taskId)
                 val userIds = rawRecords.map { it.user_id }.distinct()
 
-                // 3. Carrega os perfis dos donos dos registos
                 val profiles = if (userIds.isNotEmpty()) {
                     supabase.postgrest["profiles"].select {
                         filter { isIn("id", userIds.map { it as Any }) }
                     }.decodeList<UserProfile>()
                 } else emptyList()
 
-                // 4. Junta tudo e ordena do mais recente para o mais antigo
                 taskRecords = rawRecords.map { record ->
                     TaskRecordUiModel(
                         record = record,
@@ -92,7 +87,6 @@ class TaskDetailsViewModel : ViewModel() {
         }
     }
 
-    // Aproveitei e meti o botão "Concluído" a funcionar de verdade na BD!
     fun completeTask(taskId: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {

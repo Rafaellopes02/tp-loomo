@@ -77,7 +77,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // CAMPO 1: Introduzir Nova Senha
+        // Introduzir Nova Senha
         TextField(
             value = newPassword,
             onValueChange = { newPassword = it },
@@ -103,7 +103,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // CAMPO 2: Repetir Nova Senha
+        // Repetir Nova Senha
         TextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },

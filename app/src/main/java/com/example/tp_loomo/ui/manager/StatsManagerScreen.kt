@@ -46,7 +46,7 @@ fun StatsManagerScreen() {
     LaunchedEffect(Unit) {
         isLoading = true
         try {
-            // 1. Projetos do Gestor (Filtro no Servidor)
+            // Projetos do Gestor
             projectsList = supabase.postgrest["projects"]
                 .select(columns = Columns.list("id", "name", "project_manager_id", "description")) {
                     filter { eq("project_manager_id", currentUserId) }
@@ -56,20 +56,20 @@ fun StatsManagerScreen() {
 
             val projectIds = projectsList.map { it.id }
 
-            // Se não for gestor de nenhum projeto, para aqui para não causar erros nos filtros seguintes
+            // Se não for gestor de nenhum projeto
             if (projectIds.isEmpty()) {
                 isLoading = false
                 return@LaunchedEffect
             }
 
-            // 2. Membros apenas dos seus projetos
+            // Membros apenas dos seus projetos
             membersConnections = supabase.postgrest["project_members"]
                 .select(columns = Columns.list("project_id", "user_id")) {
                     filter { isIn("project_id", projectIds) }
                 }
                 .decodeList<StatProjectMember>()
 
-            // 3. IDs únicos dos utilizadores (Membros + Gestor)
+            // IDs únicos dos utilizadores
             val memberUserIds = (
                     membersConnections.map { it.user_id } + projectsList.mapNotNull { it.project_manager_id }
                     ).distinct()
@@ -82,7 +82,7 @@ fun StatsManagerScreen() {
                     .decodeList<StatUser>()
             }
 
-            // 4. Tarefas apenas dos seus projetos
+            // Tarefas apenas dos seus projetos
             tasksList = supabase.postgrest["tasks"]
                 .select(columns = Columns.list(
                     "id", "project_id", "title", "description",
@@ -95,7 +95,7 @@ fun StatsManagerScreen() {
 
             val taskIds = tasksList.map { it.id }
 
-            // 5. Assignments apenas das suas tarefas
+            // Assignments apenas das suas tarefas
             if (taskIds.isNotEmpty()) {
                 taskAssignmentsList = supabase.postgrest["task_assignments"]
                     .select(columns = Columns.list("id", "task_id", "user_id")) {
@@ -174,7 +174,6 @@ fun StatsManagerScreen() {
                                                 val manager = usersList.find { it.id == proj.project_manager_id }
                                                 val team = usersList.filter { teamIds.contains(it.id) }
 
-                                                // 👇 ADICIONADO O CONTEXT AQUI
                                                 val html = buildReportHtml(
                                                     context = context,
                                                     project = proj,
@@ -217,7 +216,6 @@ fun StatsManagerScreen() {
                                                         }
                                                         .decodeList<StatTaskRecord2>()
 
-                                                    // 👇 ADICIONADO O CONTEXT AQUI
                                                     val html = buildTaskReportHtml(
                                                         context = context,
                                                         task = task,
@@ -278,7 +276,6 @@ fun StatsManagerScreen() {
                                                         tasksList.any { it.id == r.task_id }
                                                     }
 
-                                                    // 👇 ADICIONADO O CONTEXT AQUI
                                                     val html = buildUserReportHtml(
                                                         context = context,
                                                         user = user,

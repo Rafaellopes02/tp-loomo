@@ -54,9 +54,9 @@ fun HistoryUserScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
-        contentPadding = PaddingValues(top = 48.dp, bottom = 120.dp) // bottom alto por causa da navbar
+        contentPadding = PaddingValues(top = 48.dp, bottom = 120.dp)
     ) {
-        // --- CABEÇALHO CENTRALIZADO ---
+        // CABEÇALHO
         item {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -69,7 +69,7 @@ fun HistoryUserScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // --- BARRA DE PESQUISA ---
+        // BARRA DE PESQUISA
         item {
             OutlinedTextField(
                 value = searchQuery,
@@ -89,7 +89,7 @@ fun HistoryUserScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // --- LISTA AGRUPADA POR MÊS ---
+        // LISTA AGRUPADA POR MÊS
         if (filteredList.isEmpty()) {
             item {
                 Text(
@@ -139,7 +139,6 @@ fun HistoryTaskCard(item: HistoryTaskUiModel) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ícone verde de check
                 Box(
                     modifier = Modifier.size(36.dp).background(Color(0xFFD7F2DC), CircleShape),
                     contentAlignment = Alignment.Center

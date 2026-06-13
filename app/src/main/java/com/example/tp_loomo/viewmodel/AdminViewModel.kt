@@ -23,8 +23,6 @@ class AdminViewModel : ViewModel() {
 
     var projectProgressMap by mutableStateOf<Map<Int, Int>>(emptyMap())
         private set
-
-   // Guarda o número total real de pessoas registadas
     var totalSystemUsers by mutableIntStateOf(0)
         private set
 
@@ -56,7 +54,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // Vai à BD contar TODA a gente (sem filtrar por cargos)
+    // Vai à BD contar TODA a gente
     fun loadTotalUsersCount() {
         viewModelScope.launch {
             try {
@@ -103,7 +101,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // Função de criação de projeto adaptada para o ViewModel
+    // Função de criação de projeto
     fun handleCreateProject(
         name: String, desc: String, managerId: String,
         startDate: String, endDate: String?, teamIds: List<String>,

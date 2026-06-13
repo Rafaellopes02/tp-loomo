@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "splash") {
 
                     composable("splash") {
-                        // Corrigido: Removido o 'android.window.' que o autocomplete adicionou por engano
                         SplashScreen {
                             val user = supabase.auth.currentUserOrNull()
                             if (user != null) {
@@ -108,7 +107,6 @@ class MainActivity : ComponentActivity() {
                         ChangePasswordScreen(onBack = { navController.popBackStack() })
                     }
 
-                    // --- ROTA DO GESTOR (ORIGINAL) ---
                     composable(
                         route = "projectDetails/{projectId}",
                         arguments = listOf(navArgument("projectId") { type = NavType.IntType })
@@ -121,7 +119,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- NOVA ROTA DO UTILIZADOR (BLINDADA) ---
                     composable(
                         route = "projectDetailsUser/{projectId}",
                         arguments = listOf(navArgument("projectId") { type = NavType.IntType })
@@ -131,13 +128,11 @@ class MainActivity : ComponentActivity() {
                             projectId = projectId,
                             onBackClick = { navController.popBackStack() },
                             onTaskClick = { taskId ->
-                                // Corrigido: O User clica e vai para a mesma TaskDetailsScreen
                                 navController.navigate("taskDetails/$taskId")
                             }
                         )
                     }
 
-                    // --- ROTA DA TAREFA (O Ecrã onde se vê a tarefa e se clica no +) ---
                     composable(
                         route = "taskDetails/{taskId}",
                         arguments = listOf(navArgument("taskId") { type = NavType.IntType })
@@ -146,12 +141,10 @@ class MainActivity : ComponentActivity() {
                         TaskDetailsScreen(
                             taskId = taskId,
                             onBackClick = { navController.popBackStack() },
-                            // Quando clica no +, abre o formulário
                             onAddRecordClick = { navController.navigate("taskRecordForm/$taskId") }
                         )
                     }
 
-                    // --- ROTA DO FORMULÁRIO (O Ecrã para adicionar informações) ---
                     composable(
                         route = "taskRecordForm/{taskId}",
                         arguments = listOf(navArgument("taskId") { type = NavType.IntType })

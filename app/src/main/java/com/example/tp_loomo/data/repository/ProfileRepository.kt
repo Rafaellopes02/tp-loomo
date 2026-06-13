@@ -23,7 +23,6 @@ class ProfileRepository(private val context: Context) {
         val userId = supabase.auth.currentUserOrNull()?.id ?: return null
 
         return try {
-            // Busca sempre da tabela profiles (fonte de verdade)
             val result = supabase.postgrest["profiles"]
                 .select(columns = Columns.list("full_name", "username", "avatar_url")) {
                     filter { eq("id", userId) }
@@ -60,7 +59,7 @@ class ProfileRepository(private val context: Context) {
                     avatarUrl      = prefs.getString("cached_avatar_url", null)
                 )
             } else {
-                // Fallback para auth metadata se não há cache nenhum
+                // Fallback para auth metadata se não há cache
                 val user = supabase.auth.currentUserOrNull()
                 UserProfileData(
                     nomeCompleto   = user?.userMetadata?.get("full_name")?.toString()?.replace("\"", "") ?: "",

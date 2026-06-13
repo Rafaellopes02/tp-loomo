@@ -53,7 +53,7 @@ fun FloatingBottomNavBar(
             BottomNavItem(navProfile, Icons.Outlined.Person)
         )
         else -> listOf(
-            // Lista padrão (Utilizador Normal / "user")
+            // Lista padrão (Utilizador)
             BottomNavItem(navHome, Icons.Outlined.Home),
             BottomNavItem(navTasks, Icons.Outlined.Layers),
             BottomNavItem(navHistory, Icons.Outlined.DateRange),

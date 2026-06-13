@@ -56,7 +56,7 @@ fun SignUpScreen(
     var showAvatarScreen by remember { mutableStateOf(false) }
     var selectedAvatarDrawable by remember { mutableStateOf<Int?>(null) }
 
-    // Lemos os estados do ViewModel
+    // Ler os estados do ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
 
@@ -89,7 +89,7 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // FOTO DE PERFIL (agora clicável para escolher avatar)
+        // FOTO DE PERFIL
         Box(
             modifier = Modifier.size(180.dp).clip(CircleShape).clickable { showAvatarScreen = true },
             contentAlignment = Alignment.Center
@@ -204,7 +204,6 @@ fun SignUpScreen(
     }
 }
 
-// Mapeia o resource drawable para a string gravada na BD
 fun avatarToDbValue(drawableId: Int): String = when (drawableId) {
     R.drawable.avatar1 -> "avatar1"
     R.drawable.avatar2 -> "avatar2"

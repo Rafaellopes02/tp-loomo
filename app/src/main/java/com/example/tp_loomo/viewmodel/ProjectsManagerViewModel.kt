@@ -14,11 +14,9 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-// Pequeno modelo de dados para extrair apenas o avatar do Gestor da tabela profiles
 @Serializable
 data class ManagerAvatarRow(val avatar_url: String? = null)
 
-// Um modelo para agrupar tudo o que o cartão precisa!
 data class ProjectUiModel(
     val project: Project,
     val avatars: List<String?>,
@@ -42,16 +40,15 @@ class ProjectsManagerViewModel : ViewModel() {
             try {
                 val userId = supabase.auth.currentUserOrNull()?.id ?: return@launch
 
-                // 1. Carrega os projetos em que ele é Gestor
+                // Carrega os projetos em que ele é Gestor
                 val managedProjects = repository.getManagedProjects()
 
                 val combinedList = mutableListOf<ProjectUiModel>()
 
-                // 2. Para cada projeto, faz as contas das tarefas e dos avatares
+                // Para cada projeto, faz as contas das tarefas e dos avatares
                 for (project in managedProjects) {
                     val projectId = project.id ?: continue
 
-                    // --- PASSO NOVO: Buscar o avatar do Gestor ---
                     var managerAvatar: String? = null
                     if (project.project_manager_id != null) {
                         try {
@@ -65,22 +62,16 @@ class ProjectsManagerViewModel : ViewModel() {
                         }
                     }
 
-                    // --- Buscar os avatares da Equipa ---
                     val members = repository.getProjectMembers(projectId)
                     val teamAvatars = members.map { it.avatar_url }
 
-                    // --- JUNTAR TUDO NUMA LISTA ÚNICA ---
                     val combinedAvatars = mutableListOf<String?>()
                     combinedAvatars.add(managerAvatar)
                     combinedAvatars.addAll(teamAvatars)
-                    // O .distinct() garante que não há fotos repetidas
                     val finalAvatars = combinedAvatars.distinct()
-
-                    // Contagem de tarefas e progresso
                     val tasks = repository.getProjectTasks(projectId)
 
                     val totalTasks = tasks.size
-                    // Consideramos concluídas as tarefas com status 'completed' ou 100% de progresso
                     val completedTasks = tasks.count {
                         it.status?.lowercase() in listOf("completed", "concluded", "concluída", "concluido") || it.completion_rate == 100
                     }

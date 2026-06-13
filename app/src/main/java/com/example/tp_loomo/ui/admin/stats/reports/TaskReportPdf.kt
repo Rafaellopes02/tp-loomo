@@ -10,7 +10,6 @@ import com.example.tp_loomo.ui.admin.stats.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-// --- DATA CLASS PARA TASK RECORDS ---
 @kotlinx.serialization.Serializable
 data class StatTaskRecord2(
     val id: Int? = null,
@@ -38,21 +37,20 @@ fun exportTaskHtmlToPdf(context: Context, htmlContent: String, taskTitle: String
 }
 
 fun buildTaskReportHtml(
-    context: Context, // <-- AGORA RECEBE O CONTEXT AQUI
+    context: Context,
     task: StatTask,
     projectName: String,
     assignedUsers: List<StatUser>,
     records: List<StatTaskRecord2>
 ): String {
-    // Carregar os textos traduzidos do sistema
     val txtPending = context.getString(R.string.pending_tasks_stat)
     val txtCompleted = context.getString(R.string.completed)
     val txtInProgress = context.getString(R.string.state_in_progress)
-    val txtNoDescription = context.getString(R.string.description) // reaproveitado
-    val txtNoDeadline = context.getString(R.string.no_deadline) // reaproveitado
-    val txtAdmin = context.getString(R.string.admin) // reaproveitado
-    val txtProjectManager = context.getString(R.string.project_manager_role) // reaproveitado
-    val txtTeamMember = context.getString(R.string.team_member_role) // reaproveitado
+    val txtNoDescription = context.getString(R.string.description)
+    val txtNoDeadline = context.getString(R.string.no_deadline)
+    val txtAdmin = context.getString(R.string.admin)
+    val txtProjectManager = context.getString(R.string.project_manager_role)
+    val txtTeamMember = context.getString(R.string.team_member_role)
 
     val currentDate = SimpleDateFormat("dd MMMM yyyy · HH:mm", Locale.getDefault()).format(Date())
 
@@ -81,7 +79,6 @@ fun buildTaskReportHtml(
     val lastProgress = records.maxByOrNull { it.id ?: 0 }?.progress ?: task.completion_rate ?: 0
     val prazo = task.due_date ?: txtNoDeadline
 
-    // HTML dos utilizadores atribuídos
     val colors = listOf("blue", "teal", "coral", "violet", "green", "amber")
     val assigneesHtml = if (assignedUsers.isEmpty()) {
         "<p style='color:#8a96a8; font-size:13px;'>${context.getString(R.string.pdf_no_assignees_message)}</p>"
@@ -107,7 +104,6 @@ fun buildTaskReportHtml(
         }.joinToString("\n")
     }
 
-    // HTML dos registos de trabalho
     val recordsHtml = if (records.isEmpty()) {
         "<tr><td colspan='5' style='text-align:center; color:#8a96a8; padding:20px;'>${context.getString(R.string.pdf_no_records_message)}</td></tr>"
     } else {

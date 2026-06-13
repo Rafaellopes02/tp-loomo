@@ -18,7 +18,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     init {
-        loadProfile() // ← carrega automaticamente ao criar o ViewModel
+        loadProfile()
     }
 
     fun loadProfile() {

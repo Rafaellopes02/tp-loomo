@@ -137,8 +137,6 @@ data class CardMemberRow(val user_id: String)
 
 @Serializable
 data class CardProfileRow(val full_name: String? = null, val avatar_url: String? = null)
-
-// 👇 NOVA DATA CLASS PARA LER AS TAREFAS DE FORMA LEVE
 @Serializable
 data class CardTaskRow(val status: String? = null, val completion_rate: Int? = null)
 
@@ -155,8 +153,6 @@ fun AdminProjectListCard(
 
     var managerName by remember { mutableStateOf(txtLoading) }
     var projectAvatars by remember { mutableStateOf<List<String?>>(emptyList()) }
-
-    // 👇 ESTADOS REAIS PARA AS TAREFAS EM VEZ DA MATEMÁTICA SIMULADA
     var completedCount by remember { mutableIntStateOf(0) }
     var pendingCount by remember { mutableIntStateOf(0) }
 
@@ -167,7 +163,7 @@ fun AdminProjectListCard(
         pendingCount = 0
 
         try {
-            // 1. CARREGAR GESTOR
+            // CARREGAR GESTOR
             var tempManagerAvatar: String? = null
             if (project.project_manager_id != null) {
                 val managerProfile = supabase.postgrest["profiles"]
@@ -185,7 +181,7 @@ fun AdminProjectListCard(
                 managerName = txtNoManager
             }
 
-            // 2. CARREGAR EQUIPA
+            // CARREGAR EQUIPA
             val members = supabase.postgrest["project_members"]
                 .select(columns = Columns.list("user_id")) {
                     filter { eq("project_id", project.id) }
@@ -209,7 +205,7 @@ fun AdminProjectListCard(
 
             projectAvatars = combined.distinct()
 
-            // 3. 👇 CARREGAR E CONTAR TAREFAS REAIS DA BASE DE DADOS
+            // CARREGAR E CONTAR TAREFAS
             val tasks = supabase.postgrest["tasks"]
                 .select(columns = Columns.list("status", "completion_rate")) {
                     filter { eq("project_id", project.id) }
@@ -321,8 +317,6 @@ fun AdminProjectListCard(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // AS TAREFAS AGORA SÃO 100% REAIS E DINÂMICAS!
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

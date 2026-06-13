@@ -18,7 +18,7 @@ class AdminRepository {
         }.decodeList<UserProfile>()
     }
 
-    // Criar novo utilizador (Auth + Profile)
+    // Criar novo utilizador
     suspend fun createNewUser(email: String, fullName: String, username: String, role: String) {
         supabase.auth.signUpWith(Email) {
             this.email = email

@@ -93,7 +93,6 @@ fun DashboardManagerScreen(
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )
-                // Reutiliza o teu "Bem-Vindo de Volta!"
                 Text(text = stringResource(id = R.string.login_subtitle), fontSize = 14.sp, color = Color.Gray)
             }
         }

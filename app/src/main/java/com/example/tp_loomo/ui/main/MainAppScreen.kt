@@ -48,15 +48,14 @@ fun MainAppScreen(
     val context = LocalContext.current
     val currentRole = viewModel.currentRole
 
-    // Log para diagnosticar o estado do cargo
     android.util.Log.d("NAV_DEBUG", "Role na MainAppScreen: '$currentRole'")
 
-    // 1. Carrega o role no início
+    // Carrega o role
     LaunchedEffect(Unit) {
         viewModel.fetchUserRole()
     }
 
-    // 2. Observa o erro de forma explícita
+    // Observa o erro
     LaunchedEffect(viewModel.errorMessage) {
         val message = viewModel.errorMessage
         if (!message.isNullOrBlank()) {

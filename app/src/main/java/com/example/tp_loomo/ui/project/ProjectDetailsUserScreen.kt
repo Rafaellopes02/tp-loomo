@@ -42,8 +42,6 @@ fun ProjectDetailsUserScreen(
     viewModel: ProjectDetailsViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Todas") }
-
-    // 👇 REVERTIDO: A tua lógica original de carregamento em texto voltou a 100% aqui
     var realManagerName by remember { mutableStateOf("A carregar...") }
     var realManagerAvatar by remember { mutableStateOf<String?>(null) }
 
@@ -169,7 +167,6 @@ fun ProjectDetailsUserScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 👇 MAPEAMENTO SEGURO DA TRADUÇÃO: Feito fora do LaunchedEffect na hora de desenhar o Text
                 val translatedManagerName = when(realManagerName) {
                     "A carregar..." -> stringResource(id = R.string.state_loading)
                     "Desconhecido" -> stringResource(id = R.string.state_unknown)

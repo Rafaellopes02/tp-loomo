@@ -64,7 +64,7 @@ fun TasksUserScreen(
         modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
         contentPadding = PaddingValues(top = 48.dp, bottom = 120.dp)
     ) {
-        // --- CABEÇALHO CENTRALIZADO ---
+        // CABEÇALHO
         item {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -77,7 +77,7 @@ fun TasksUserScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // --- FILTROS ---
+        // FILTROS
         item {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -92,7 +92,7 @@ fun TasksUserScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // --- LISTA DE CARTÕES GRANDES ---
+        // LISTA DE CARTÕES GRANDES
         if (filteredTasks.isEmpty()) {
             item {
                 Text(
